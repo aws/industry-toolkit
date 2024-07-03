@@ -1,0 +1,60 @@
+Name: blueprint-release
+SchemaVersion: "1.0"
+Triggers:
+  - Type: PUSH
+    Branches:
+      - main
+  - Type: MANUAL
+Actions:
+  check_commit:
+    Identifier: aws/build@v1
+    Inputs:
+      Sources:
+        - WorkflowSource
+    Outputs:
+      AutoDiscoverReports:
+        Enabled: false
+      Variables:
+        - IS_RELEASE_COMMIT
+    Configuration:
+      Steps:
+        - Run: TRIGGER_COMMIT_ID=$CATALYST_EVENT_SHA
+        - Run: COMMIT_MESSAGE="$(git log -n 1 $TRIGGER_COMMIT_ID --oneline)"
+        - Run: RELEASE_PREFIX='chore(release):'
+        - Run: IS_RELEASE_COMMIT=false
+        - Run: if grep -q "$RELEASE_PREFIX" <<< "$COMMIT_MESSAGE"; then echo 'this is a release commit' && IS_RELEASE_COMMIT=true; fi
+  build_and_commit:
+    Identifier: aws/build@v1
+    Inputs:
+      Sources:
+        - WorkflowSource
+      Variables:
+        - Name: IS_RELEASE_COMMIT
+          Value: ${check_commit.IS_RELEASE_COMMIT}
+    Outputs:
+      AutoDiscoverReports:
+        Enabled: false
+      Artifacts:
+        - Name: codebase
+          Files:
+            - "**/*"
+    Configuration:
+      Steps:
+        - Run: if $IS_RELEASE_COMMIT; then  echo 'This is a release commit, skipping'; else chmod +x release.sh && ./release.sh; fi
+    DependsOn:
+      - check_commit
+  publish_blueprint:
+    Identifier: aws/publish-blueprint-action@v1
+    Inputs:
+      Artifacts:
+        - codebase
+      Variables:
+        - Name: IS_RELEASE_COMMIT
+          Value: ${check_commit.IS_RELEASE_COMMIT}
+    DependsOn:
+      - build_and_commit
+    Configuration:
+      ArtifactPackagePath: dist/js/*.tgz
+      PackageJSONPath: package.json
+      InputArtifactName: codebase
+      TimeoutInSeconds: "120"
