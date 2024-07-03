@@ -1,0 +1,15 @@
+plugins {
+{{{ plugins }}}
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+{{{ dependencies }}}
+}
+
+{{{ publishing }}}
+
+sourceSets.main.java.srcDirs = ['src/main/smithy']
