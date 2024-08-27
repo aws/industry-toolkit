@@ -1,0 +1,601 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  version: "2024-01-01"
+  description: >
+    The Product Service API provides access to product and category data within a retail system. It includes operations for managing products, product variants, and categories.
+
+paths:
+  /products:
+    get:
+      summary: Lists the available products in the catalog.
+      operationId: listProducts
+      parameters:
+        - in: query
+          name: nextToken
+          schema:
+            type: string
+          description: Specifies the beginning of the next page of results.
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+          description: The maximum number of results to return at once.
+        - in: query
+          name: nameFilter
+          schema:
+            type: string
+          description: Filters products by name.
+        - in: query
+          name: categoryFilter
+          schema:
+            type: string
+            format: uuid
+          description: Filters products by category.
+      responses:
+        '200':
+          description: A list of products.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListProductsResponse'
+
+    post:
+      summary: Creates a new product in the catalog.
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: The created product.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProductResponse'
+
+  /products/{productId}:
+    get:
+      summary: Retrieves details for a specific product in the catalog.
+      operationId: getProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product being requested.
+      responses:
+        '200':
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProductResponse'
+
+    patch:
+      summary: Updates an existing product in the catalog.
+      operationId: updateProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product being updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: The updated product.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProductResponse'
+
+    delete:
+      summary: Deletes a product from the catalog.
+      operationId: deleteProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product being deleted.
+      responses:
+        '204':
+          description: Product deleted successfully.
+
+  /products/{productId}/variants:
+    get:
+      summary: Lists all variants for a specific product.
+      operationId: listProductVariants
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product being requested.
+        - in: query
+          name: nextToken
+          schema:
+            type: string
+          description: Specifies the beginning of the next page of results.
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+          description: The maximum number of results to return at once.
+      responses:
+        '200':
+          description: A list of product variants.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListProductVariantsResponse'
+
+    post:
+      summary: Creates a new product variant for a specific product.
+      operationId: createProductVariant
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product for which a variant is being created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductVariantRequest'
+      responses:
+        '201':
+          description: The created product variant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProductVariantResponse'
+
+  /products/{productId}/variants/{variantId}:
+    get:
+      summary: Retrieves details for a specific product variant.
+      operationId: getProductVariant
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product.
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product variant.
+      responses:
+        '200':
+          description: Product variant details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProductVariantResponse'
+
+    patch:
+      summary: Updates an existing product variant.
+      operationId: updateProductVariant
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product.
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product variant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductVariantRequest'
+      responses:
+        '200':
+          description: The updated product variant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProductVariantResponse'
+
+    delete:
+      summary: Deletes a product variant.
+      operationId: deleteProductVariant
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product.
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the product variant.
+      responses:
+        '204':
+          description: Product variant deleted successfully.
+
+  /categories:
+    get:
+      summary: Lists all categories.
+      operationId: listCategories
+      parameters:
+        - in: query
+          name: nextToken
+          schema:
+            type: string
+          description: Specifies the beginning of the next page of results.
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+          description: The maximum number of results to return at once.
+        - in: query
+          name: nameFilter
+          schema:
+            type: string
+          description: Filters categories by name.
+      responses:
+        '200':
+          description: A list of categories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCategoriesResponse'
+
+    post:
+      summary: Creates a new category.
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: The created category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCategoryResponse'
+
+  /categories/{categoryId}:
+    get:
+      summary: Retrieves details for a specific category.
+      operationId: getCategory
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the category being requested.
+      responses:
+        '200':
+          description: Category details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCategoryResponse'
+
+    patch:
+      summary: Updates an existing category.
+      operationId: updateCategory
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the category being updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: The updated category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCategoryResponse'
+
+    delete:
+      summary: Deletes a category.
+      operationId: deleteCategory
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier for the category being deleted.
+      responses:
+        '204':
+          description: Category deleted successfully.
+
+components:
+  schemas:
+    CreateProductRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        brand:
+          type: string
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+            format: uuid
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+        imageUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageUrl'
+      required:
+        - sku
+        - name
+        - price
+        - currency
+
+    CreateProductResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductRequest'
+        - type: object
+          properties:
+            created:
+              type: string
+              format: date-time
+            modified:
+              type: string
+              format: date-time
+
+    GetProductResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductResponse'
+
+    UpdateProductRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductRequest'
+
+    UpdateProductResponse:
+      allOf:
+        - $ref: '#/components/schemas/GetProductResponse'
+
+    ListProductsResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        nextToken:
+          type: string
+        totalCount:
+          type: integer
+
+    ProductSummary:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+
+    CreateProductVariantRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        sku:
+          type: string
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+        imageUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageUrl'
+      required:
+        - name
+        - sku
+        - price
+        - currency
+
+    CreateProductVariantResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductVariantRequest'
+        - type: object
+          properties:
+            created:
+              type: string
+              format: date-time
+            modified:
+              type: string
+              format: date-time
+
+    GetProductVariantResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductVariantResponse'
+
+    UpdateProductVariantRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductVariantRequest'
+
+    UpdateProductVariantResponse:
+      allOf:
+        - $ref: '#/components/schemas/GetProductVariantResponse'
+
+    ListProductVariantsResponse:
+      type: object
+      properties:
+        productVariants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariantSummary'
+        nextToken:
+          type: string
+        totalCount:
+          type: integer
+
+    ProductVariantSummary:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+
+    CreateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parentId:
+          type: string
+          format: uuid
+
+    CreateCategoryResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateCategoryRequest'
+        - type: object
+          properties:
+            created:
+              type: string
+              format: date-time
+            modified:
+              type: string
+              format: date-time
+
+    GetCategoryResponse:
+      allOf:
+        - $ref: '#/components/schemas/CreateCategoryResponse'
+
+    UpdateCategoryRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateCategoryRequest'
+
+    UpdateCategoryResponse:
+      allOf:
+        - $ref: '#/components/schemas/GetCategoryResponse'
+
+    ListCategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategorySummary'
+        nextToken:
+          type: string
+        totalCount:
+          type: integer
+
+    CategorySummary:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    Attribute:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+
+    ImageUrl:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
