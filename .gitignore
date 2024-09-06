@@ -37,3 +37,4 @@ synthbundle-*
 
 # Optional eslint cache
 .eslintcache
+/.vs
