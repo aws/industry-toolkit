@@ -1,0 +1,36 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - COMMIT_TYPE
+    - COMMIT_SCOPE
+    - COMMIT_SUBJECT
+    - COMMIT_BODY
+    - COMMIT_FOOTER
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - ls -R $CODEBUILD_SRC_DIR_Artifact_Source_Scripts_Source
+      - node --version
+      - cd $CODEBUILD_SRC_DIR_Artifact_Source_Scripts_Source/scripts/validation/parse_commit
+  build:
+    on-failure: ABORT
+    commands:
+      - echo Entered the build phase...
+      - ls -R
+      - echo Commit Message:$COMMIT_MSG
+      - npm run start
+      - export COMMIT_TYPE=$(jq -r '.COMMIT_TYPE' env-vars.json)
+      - export COMMIT_SCOPE=$(jq -r '.COMMIT_SCOPE' env-vars.json)
+      - export COMMIT_SUBJECT=$(jq -r '.COMMIT_SUBJECT' env-vars.json)
+      - export COMMIT_BODY=$(jq -r '.COMMIT_BODY' env-vars.json)
+      - export COMMIT_FOOTER=$(jq -r '.COMMIT_FOOTER' env-vars.json)
+      - echo "COMMIT_TYPE=$COMMIT_TYPE"
+      - echo "COMMIT_SCOPE=$COMMIT_SCOPE"
+      - echo "COMMIT_SUBJECT=$COMMIT_SUBJECT"
+      - echo "COMMIT_BODY=$COMMIT_BODY"
+      - echo "COMMIT_FOOTER=$COMMIT_FOOTER"
+  post_build:
+    commands:
+      - echo Entered the post-build phase...

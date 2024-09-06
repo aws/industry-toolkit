@@ -1,0 +1,32 @@
+version: 0.2
+
+env:
+  variables:
+    SDK_VERSION: '1.0.0'
+  exported-variables:
+    - SDK_VERSION
+    - REPO_ARN
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - aws codeartifact login --tool npm --repository $ARTIFACT_REPO --domain $ARTIFACT_DOMAIN --domain-owner $ARTIFACT_DOMAIN_OWNER --region $ARTIFACT_REGION
+  pre_build:
+    commands:
+      - echo Entered the pre-build phase...
+      - echo Fetching tags for CodeArtifact repository...
+      - export REPO_ARN=arn:aws:codeartifact:$ARTIFACT_REGION:$ARTIFACT_DOMAIN_OWNER:repository/$ARTIFACT_DOMAIN/$ARTIFACT_REPO
+  build:
+    commands:
+      - echo Entered the build phase...
+      - cd $CODEBUILD_SRC_DIR_Artifact_Source_Scripts_Source/scripts
+      - aws codeartifact list-tags-for-resource --resource-arn $REPO_ARN > tags.json
+      - echo Tags for the repository:$(cat tags.json | jq -r '.tags')
+      - chmod +x set-version.sh
+      - ./set-version.sh
+      - echo "Reading version from version.json"
+      - export SDK_VERSION=$(jq -r .$COMMIT_SCOPE version.json)
+      - echo SDK_VERSION is set to $SDK_VERSION
+  post_build:
+    commands:
+      - echo Entered the post-build phase...

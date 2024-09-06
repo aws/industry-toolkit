@@ -1,0 +1,13 @@
+{
+  "name": "parse_commit",
+  "version": "1.0.0",
+  "description": "Used to parse github commit messages.",
+  "type": "module",
+  "main": "parse_commit.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node parse_commit.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

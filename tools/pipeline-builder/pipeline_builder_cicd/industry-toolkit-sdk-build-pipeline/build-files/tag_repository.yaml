@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - echo Authenticating with AWS CodeArtifact
+      - aws codeartifact login --tool npm --repository $ARTIFACT_REPO --domain $ARTIFACT_DOMAIN --domain-owner $ARTIFACT_DOMAIN_OWNER --region $ARTIFACT_REGION
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo "Setting tag with key $COMMIT_SCOPE and value $SDK_VERSION"
+      - aws codeartifact tag-resource --resource-arn $REPO_ARN --tags key=$COMMIT_SCOPE,value=$SDK_VERSION
+      - echo Tagged repository with $COMMIT_SCOPE:$SDK_VERSION
+      - echo Tagging complete
+  post_build:
+    commands:
+      - echo Entered the post-build phase...

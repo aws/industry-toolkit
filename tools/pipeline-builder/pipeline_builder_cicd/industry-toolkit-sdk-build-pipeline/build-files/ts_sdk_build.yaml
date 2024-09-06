@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - echo SDK Version:$SDK_VERSION
+      - echo Commit Scope:$COMMIT_SCOPE
+      - echo Artifact Domain:$ARTIFACT_DOMAIN
+      - echo Artifact Domain Owner:$ARTIFACT_DOMAIN_OWNER
+      - echo Artifact Region:$ARTIFACT_REGION
+      - echo Artifact Repository:$ARTIFACT_REPO
+      - npm install @openapitools/openapi-generator-cli -g
+      - npm install -g typescript
+  pre_build:
+    commands:
+      - echo Entered the pre-build phase...
+      - echo "Logging in to AWS CodeArtifact"
+      - aws codeartifact login --tool npm --repository $ARTIFACT_REPO --domain $ARTIFACT_DOMAIN --domain-owner $ARTIFACT_DOMAIN_OWNER --region $ARTIFACT_REGION
+      - export CODEARTIFACT_NPM_REGISTRY_URL=$(aws codeartifact get-repository-endpoint --domain $ARTIFACT_DOMAIN --domain-owner $ARTIFACT_DOMAIN_OWNER --repository $ARTIFACT_REPO --format npm --query repositoryEndpoint --output text --region $ARTIFACT_REGION)
+  build:
+    commands:
+      - echo Entered the build phase...
+      - npx @openapitools/openapi-generator-cli generate -i $CODEBUILD_SRC_DIR/retail/capabilities/$COMMIT_SCOPE/$COMMIT_SCOPE.yaml -g typescript-inversify -o $COMMIT_SCOPE-client/ --additional-properties=npmName=@industry-toolkit-retail/$COMMIT_SCOPE-client,npmVersion=$SDK_VERSION,supportsES6=true
+      - cd $COMMIT_SCOPE-client
+      - node $CODEBUILD_SRC_DIR_Artifact_Source_Scripts_Source/scripts/findAndReplace.js
+      - npm i
+      - npm run build
+  post_build:
+    commands:
+      - echo Entered the post-build phase...
+      - echo Publishing to CodeArtifact
+      - npm publish
+      - echo Published successfully to CodeArtifact:$ARTIFACT_REPO

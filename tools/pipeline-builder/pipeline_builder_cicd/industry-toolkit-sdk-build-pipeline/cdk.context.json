@@ -1,0 +1,5 @@
+{
+  "ssm:account=211125507740:parameterName=github-owner:region=us-west-2": "dorestad13",
+  "ssm:account=211125507740:parameterName=github-repo:region=us-west-2": "test-industry-reference-models",
+  "ssm:account=211125507740:parameterName=github-connection:region=us-west-2": "arn:aws:codeconnections:us-west-2:211125507740:connection/a2f1c67d-059c-4825-adb2-c2aedb546bca"
+}
