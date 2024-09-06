@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: ProcurementService
+  version: 1.0.0
+  description: |
+    The ProcurementService API allows for the generation of content for Request for Information (RFI).
+    The response will be used to build out a PDF, so it should include anything useful for generating an RFI.
+paths:
+  /GenerateRFI:
+    post:
+      summary: Generate RFI
+      description: |
+        Your job is to generate content for Request for Information (RFI). The response will be used to build out a PDF, so include anything useful to generate an RFI.
+      operationId: GenerateRFI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRFIInput'
+      responses:
+        '200':
+          description: RFI generated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateRFIOutput'
+components:
+  schemas:
+    GenerateRFIInput:
+      type: object
+      properties:
+        RFIPurpose:
+          type: string
+          description: |
+            This is the purpose of the RFI. It will provide the context for what the organization is trying to procure.
+        KeyRequirements:
+          type: string
+          description: |
+            This is a set of key requirements the RFI should use to generate the RFI response.
+        OrganizationalMission:
+          type: string
+          description: |
+            A brief summary of the organization's mission.
+      required:
+        - RFIPurpose
+        - KeyRequirements
+        - OrganizationalMission
+
+    KeyRequirement:
+      type: object
+      properties:
+        Index:
+          type: integer
+          description: |
+            The requirement index. Start with number 1 and add 1 for each additional requirement.
+        RequirementName:
+          type: string
+          description: The name of the requirement.
+        RequirementValue:
+          type: string
+          description: The value for the requirement.
+      required:
+        - Index
+        - RequirementName
+        - RequirementValue
+
+    KeyRequirementsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/KeyRequirement'
+
+    GenerateRFIOutput:
+      type: object
+      properties:
+        OrganizationalMission:
+          type: string
+          description: |
+            Provide a description of the organization's description, based on the input property `OrganizationalMission`. You can add more context based on the overall request to enhance this.
+        Introduction:
+          type: string
+          description: |
+            Text to summarize the purpose of the RFI for the reader.
+        Disclaimer:
+          type: string
+          description: |
+            Legal disclaimer text to include in the RFI.
+        ResponseInstructions:
+          type: string
+          description: |
+            Instructions for vendors on how to respond to the RFI.
+        Clarifications:
+          type: string
+          description: |
+            Any clarifications the vendor needs to be aware of when responding to the RFI.
+        KeyRequirements:
+          $ref: '#/components/schemas/KeyRequirementsList'
+          description: |
+            Provide a human-readable list of key requirements (index, requirement name, requirement value), generated from the input `KeyRequirements`.
+      required:
+        - OrganizationalMission
+        - Introduction
+        - Disclaimer
+        - ResponseInstructions
+        - Clarifications
+        - KeyRequirements
