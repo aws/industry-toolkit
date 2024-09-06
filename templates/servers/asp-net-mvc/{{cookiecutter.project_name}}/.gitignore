@@ -1,0 +1,64 @@
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+.vscode/
+.vs/
+*.user
+*.rsuser
+*.suo
+*.sln.docstates
+
+# Logs
+*.log
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Compiled binary
+*.dll
+*.exe
+*.so
+*.dylib
+*.lib
+*.pdb
+*.cache
+
+# Intermediate files
+*.ilk
+*.obj
+*.idb
+*.tlog
+*.lastbuildstate
+
+# Generated files
+*.g.*
+*.g.i.*
+*.gen.cs
+
+# Temporary files
+*.tmp
+*.temp
+*.diff
+*.orig
+*.bak
+*.swp
+
+# Test result files
+TestResults/
+*.coverage
+*.coveragexml
+
+# Publish/Deployment
+publish/
+*.publishsettings
+
+# Rider
+.idea/
+.idea_modules/
