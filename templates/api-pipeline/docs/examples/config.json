@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "path":  "/src/main/openapi/my-service.openapi.yaml",
+      "location":  "https://github.com/aws-samples/industry-reference-models/blob/main/domains/retail/models/cart/model/cart.openapi.yaml"
+    }
+  ],
+  "template": {
+    "repo": "todo",
+    "subDir": "todo",
+    "config": {
+      "project_slug": "my-project",
+      "project": {
+        "name:": "my-project"
+      },
+      "typescript": {
+        "namespace": "myproject"
+      }
+    },
+    "target": "s3://pipelinebuilderstack-projectartifactsbucketaf3554b-gnbm4mmnvtgl"
+  }
+}

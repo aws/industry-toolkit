@@ -1,3 +1,15 @@
+**/cdk.out/
+
+# Ignore all virtual environments
+venv/
+.venv/
+env/
+.env/
+**/venv/
+**/.venv/
+**/env/
+**/.env/
+
 # Yarn
 .yarn/*
 !.yarn/cache
