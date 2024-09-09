@@ -1,0 +1,5 @@
+# Ignore Gradle project-specific cache directory
+{{ cookiecutter.project_slug }}/.gradle
+
+# Ignore Gradle build output directory
+{{ cookiecutter.project_slug }}/build
