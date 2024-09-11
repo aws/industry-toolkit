@@ -10,6 +10,7 @@ import requests
 import shutil
 
 s3_client = boto3.client('s3')
+bedrock_client = boto3.client('bedrock-runtime')
 
 def list_files(directory):
     file_list = []
@@ -27,6 +28,33 @@ def download_file_as_raw(file_location):
     if "github.com" in file_location and "blob" in file_location:
         file_location = file_location.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
     return requests.get(file_location)
+
+def generate_with_bedrock(prompt):
+    response = bedrock_client.invoke_model(
+        modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+        contentType='application/json',
+        accept='application/json',
+        body=json.dumps({
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 10000,
+            "anthropic_version": "bedrock-2023-05-31"
+        })
+    )
+
+    model_response = json.loads(response["body"].read())
+
+    response_text = model_response["content"][0]["text"]
+
+    split_text = response_text.split('```yaml', 1)
+
+    if len(split_text) > 1:
+        generated_content = split_text[1].split('```', 1)[0].strip()
+    else:
+        generated_content = ""
+
+    return generated_content
 
 def handler(event, context):
     files = event['files']
@@ -52,11 +80,8 @@ def handler(event, context):
         template_path = repo_dir
 
     all_files_in_template = list_files(template_path)
-    print(f"Files in the template directory after cloning: {all_files_in_template}")
 
     config_file_path = 'config.yaml'
-
-    print(f"Config: {template_config}")
 
     cookiecutter(
         template_path,
@@ -72,17 +97,22 @@ def handler(event, context):
     for file_info in files:
         file_path = file_info['path']
         file_location = file_info['location']
+        prompt = file_info.get('prompt', None)
 
         destination_path = os.path.join(cookiecutter_output_path, app_name, file_path.lstrip('/'))
         os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
-        response = download_file_as_raw(file_location)
-
-        if response.status_code == 200:
-            with open(destination_path, 'wb') as f:
-                f.write(response.content)
+        if file_location == 'bedrock' and prompt:
+            generated_content = generate_with_bedrock(prompt)
+            with open(destination_path, 'w') as f:
+                f.write(generated_content)
         else:
-            raise Exception(f"Failed to download file from {file_location}")
+            response = download_file_as_raw(file_location)
+            if response.status_code == 200:
+                with open(destination_path, 'wb') as f:
+                    f.write(response.content)
+            else:
+                raise Exception(f"Failed to download file from {file_location}")
 
     zip_path = os.path.join(working_dir, f'{run_uuid}.zip')
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:

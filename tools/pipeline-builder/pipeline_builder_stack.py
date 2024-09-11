@@ -73,3 +73,10 @@ class PipelineBuilderStack(Stack):
         bucket.grant_read_write(project_generator_lambda)
         git_secret.grant_read(project_generator_lambda)
         project_generator_lambda.grant_invoke(iam.ServicePrincipal("apigateway.amazonaws.com"))
+        project_generator_lambda.add_to_role_policy(iam.PolicyStatement(
+                    actions=[
+                        "bedrock:InvokeModel",
+                        "bedrock:InvokeModelWithResponseStream"
+                    ],
+                    resources=["*"]
+                ))
