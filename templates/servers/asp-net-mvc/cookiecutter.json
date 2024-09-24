@@ -1,0 +1,5 @@
+{
+    "project_name": "MyFirstDotNetServer",
+    "namespace": "Example.Server",
+    "description": "An ASP.Net Core MVC Web Server for the API"
+}

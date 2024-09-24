@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{1119DA6F-E76D-422E-AE08-C6DD6449E86F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "servers", "servers", "{A0CF027E-9456-4774-A55E-5034365D2AD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asp-net-mvc", "asp-net-mvc", "{BBCE51CE-EF5A-4A0C-9BCC-FCC0ADFC96EC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Project", "templates\servers\asp-net-mvc\{{cookiecutter.project_name}}\Project.csproj", "{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A0CF027E-9456-4774-A55E-5034365D2AD6} = {1119DA6F-E76D-422E-AE08-C6DD6449E86F}
+		{BBCE51CE-EF5A-4A0C-9BCC-FCC0ADFC96EC} = {A0CF027E-9456-4774-A55E-5034365D2AD6}
+		{8F2BD717-92C4-4C9D-B7B8-E652DFEE425D} = {BBCE51CE-EF5A-4A0C-9BCC-FCC0ADFC96EC}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3D797ADD-8B8E-4331-8CA8-65D0C70B3F3B}
+	EndGlobalSection
+EndGlobal
