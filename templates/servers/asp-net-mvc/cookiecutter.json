@@ -1,5 +1,6 @@
 {
     "project_name": "MyFirstDotNetServer",
     "namespace": "Example.Server",
-    "description": "An ASP.Net Core MVC Web Server for the API"
+    "description": "An ASP.Net Core MVC Web Server for the API",
+    "openapi_spec_url": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/cart/model/cart.openapi.yaml"
 }
