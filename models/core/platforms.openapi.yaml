@@ -1,0 +1,140 @@
+openapi: 3.0.0
+info:
+  title: Platform Definitions Management API
+  version: 1.0.0
+  description: API for managing Platform Definitions
+
+paths:
+  /platforms:
+    get:
+      summary: List all platform definitions
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformDefinitionList'
+    post:
+      summary: Create a new platform definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformDefinition'
+      responses:
+        '201':
+          description: Successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformDefinition'
+  
+  /platforms/{platformId}:
+    get:
+      summary: Get a single platform definition
+      parameters:
+        - in: path
+          name: platformId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformDefinition'
+    put:
+      summary: Update a platform definition
+      parameters:
+        - in: path
+          name: platformId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformDefinition'
+      responses:
+        '200':
+          description: Successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformDefinition'
+    delete:
+      summary: Delete a platform definition
+      parameters:
+        - in: path
+          name: platformId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted
+
+components:
+  schemas:
+    PlatformDefinition:
+      type: object
+      required:
+        - name
+        - implementationMappings
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        implementationMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImplementationMapping'
+    
+    ImplementationMapping:
+      type: object
+      required:
+        - serviceModelUrl
+        - implementationEcrArn
+        - routingPrefix
+        - regions
+        - computeType
+      properties:
+        serviceModelUrl:
+          type: string
+          format: uri
+        implementationArn:
+          type: string
+        routingPrefix:
+          type: string
+    
+    PlatformDefinitionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformDefinition'
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalCount:
+          type: integer
