@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     RemovalPolicy,
+    CfnParameter,
     aws_apigateway as apigateway,
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks,
@@ -8,7 +9,8 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_secretsmanager as secretsmanager,
     aws_iam as iam,
-    aws_logs as logs
+    aws_logs as logs,
+    Names
 )
 from constructs import Construct
 
@@ -16,20 +18,47 @@ class IndustryToolkitStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        log_group_name_param = CfnParameter(self, "LogGroupPrefix",
+            type="String",
+            default="/tools/industrytoolkit/",
+            description="Log group prefix for all Cloudwatch logs. "
+        )
+
+        github_secret_name_param = CfnParameter(self, "IndustryToolkitSecretName",
+            type="String",
+            default="IndustryToolkitCredentials",
+            description="Name of the Secrets Manager secret containing the secrets used by the toolkit."
+        )
+
+        codebuild_role_name_param = CfnParameter(self, "CodeBuildRoleName",
+            type="String",
+            default="IndustryToolkitCodeBuildRole",
+            description="Name of the role the CodeBuild pipeline will use. This role will be created."
+        )
+
+        random_suffix = Names.unique_id(self)[:4]
+        artifacts_bucket_name_param = CfnParameter(self, "ArtifactsBucketName",
+            type="String",
+            default=f"industry-toolkit-artifacts-bucket-{random_suffix}",
+            description="Name of the S3 bucket for storing build artifacts. This bucket will be created."
+        )
+
         log_group = logs.LogGroup(self, "ApiGatewayAccessLogs",
-                                  log_group_name="/tools/industry_toolkit/api_gateway_logs",
+                                  log_group_name=log_group_name_param.value_as_string + 'apigateway',
                                   removal_policy=RemovalPolicy.DESTROY)
 
-        artifacts_bucket = s3.Bucket(self, "IndustryToolkitArtifactsBucket")
+        artifacts_bucket = s3.Bucket(self, "IndustryToolkitArtifactsBucket",
+                                     bucket_name=artifacts_bucket_name_param.value_as_string)
 
         github_pat_secret = secretsmanager.Secret(
             self, "IndustryToolkitCredentials",
             description="Credentials for the Industry Toolkit",
-            secret_name="IndustryToolkitCredentials"
+            secret_name=github_secret_name_param.value_as_string
         )
 
         codebuild_role = iam.Role(
             self, "IndustryToolkitCodeBuildRole",
+            role_name=codebuild_role_name_param.value_as_string,
             assumed_by=iam.ServicePrincipal("codebuild.amazonaws.com"),
         )
 
@@ -49,16 +78,15 @@ class IndustryToolkitStack(Stack):
                     "pre_build": {
                         "commands": [
                             "echo 'Fetching GitHub credentials...'",
-                            f"export GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id {github_pat_secret.secret_arn} --query 'SecretString' --output text | jq -r '.\"'\"$SECRET_KEY\"'\"')",                        ]
+                            f"export GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id {github_pat_secret.secret_arn} --query 'SecretString' --output text | jq -r '.\"'\"$SECRET_KEY\"'\"')"
+                        ]
                     },
                     "build": {
                         "commands": [
                             "echo 'Decoding the CONFIG map...'",
-
-                            # Use Python to decode the CONFIG map
                             "export DECODED_CONFIG=$(echo \"$CONFIG\" | jq -r 'to_entries | map(\"\\(.key)=\\(.value | @sh)\") | join(\",\")')",
-
-                            "bash -c 'if [ \"$DECODED_CONFIG\" != \"{}\" ]; then openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated --additional-properties $DECODED_CONFIG; else openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated; fi'"
+                            "echo $DECODED_CONFIG",
+                            "bash -c 'if [ -n \"$CONFIG\" ] && [ \"$DECODED_CONFIG\" != \"\" ]; then openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated --additional-properties \"$DECODED_CONFIG\" || exit 1; else openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated || exit 1; fi'"
                         ]
                     },
                     "post_build": {
