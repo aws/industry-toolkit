@@ -1,0 +1,47 @@
+name: Build CloudFormation Template
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/industry-toolkit/**'
+
+jobs:
+  build-cfn-template:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          cd tools/industry-toolkit
+          pip install -r requirements.txt
+
+      - name: Synthesize CloudFormation Template
+        run: |
+          cd tools/industry-toolkit
+          cdk synth --output cfn
+
+      - name: Configure Git
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+
+      - name: Commit CloudFormation Template
+        run: |
+          git add tools/industry-toolkit/cfn
+          git commit -m "Auto-generated CloudFormation template"
+          git push
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
