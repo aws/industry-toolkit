@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'tools/industry-toolkit/**'
+  workflow_dispatch:
 
 jobs:
   build-cfn-template:
