@@ -23,6 +23,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
       - name: Install dependencies
         run: |
           cd tools/industry-toolkit
