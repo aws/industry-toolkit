@@ -2,6 +2,7 @@ from aws_cdk import (
     Stack,
     RemovalPolicy,
     CfnParameter,
+    CfnOutput,
     aws_apigateway as apigateway,
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks,
@@ -279,4 +280,9 @@ class IndustryToolkitStack(Stack):
                     }
                 }
             ]
+        )
+
+        CfnOutput(self, "CredentialsSecretArn",
+                    value=github_pat_secret.secret_arn,
+                    description="The ARN of the credentials Secret in Secrets Manager"
         )
