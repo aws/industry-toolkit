@@ -1,0 +1,600 @@
+Parameters:
+  LogGroupPrefix:
+    Type: String
+    Default: /tools/industrytoolkit/
+    Description: "Log group prefix for all Cloudwatch logs. "
+  IndustryToolkitSecretName:
+    Type: String
+    Default: IndustryToolkitCredentials
+    Description: Name of the Secrets Manager secret containing the secrets used by the toolkit.
+  CodeBuildRoleName:
+    Type: String
+    Default: IndustryToolkitCodeBuildRole
+    Description: Name of the role the CodeBuild pipeline will use. This role will be created.
+  ArtifactsBucketName:
+    Type: String
+    Default: industry-toolkit-artifacts-bucket-Indu
+    Description: Name of the S3 bucket for storing build artifacts. This bucket will be created.
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Resources:
+  ApiGatewayAccessLogsFB871B4C:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - Ref: LogGroupPrefix
+            - apigateway
+      RetentionInDays: 731
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/ApiGatewayAccessLogs/Resource
+  IndustryToolkitArtifactsBucketBFE8F668:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: ArtifactsBucketName
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitArtifactsBucket/Resource
+  IndustryToolkitCredentials556D8765:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Credentials for the Industry Toolkit
+      GenerateSecretString: {}
+      Name:
+        Ref: IndustryToolkitSecretName
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitCredentials/Resource
+  IndustryToolkitCodeBuildRole6AA4AB86:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+        Version: "2012-10-17"
+      RoleName:
+        Ref: CodeBuildRoleName
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitCodeBuildRole/Resource
+  IndustryToolkitCodeBuildRoleDefaultPolicy54664731:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:Abort*
+              - s3:DeleteObject*
+              - s3:GetBucket*
+              - s3:GetObject*
+              - s3:List*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - IndustryToolkitArtifactsBucketBFE8F668
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - IndustryToolkitArtifactsBucketBFE8F668
+                        - Arn
+                    - /*
+          - Action:
+              - secretsmanager:DescribeSecret
+              - secretsmanager:GetSecretValue
+            Effect: Allow
+            Resource:
+              Ref: IndustryToolkitCredentials556D8765
+          - Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":logs:"
+                    - Ref: AWS::Region
+                    - ":"
+                    - Ref: AWS::AccountId
+                    - :log-group:/aws/codebuild/
+                    - Ref: IndustryToolkitCodeBuildProject461DDFA4
+                    - :*
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":logs:"
+                    - Ref: AWS::Region
+                    - ":"
+                    - Ref: AWS::AccountId
+                    - :log-group:/aws/codebuild/
+                    - Ref: IndustryToolkitCodeBuildProject461DDFA4
+          - Action:
+              - codebuild:BatchPutCodeCoverages
+              - codebuild:BatchPutTestCases
+              - codebuild:CreateReport
+              - codebuild:CreateReportGroup
+              - codebuild:UpdateReport
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":codebuild:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :report-group/
+                  - Ref: IndustryToolkitCodeBuildProject461DDFA4
+                  - -*
+        Version: "2012-10-17"
+      PolicyName: IndustryToolkitCodeBuildRoleDefaultPolicy54664731
+      Roles:
+        - Ref: IndustryToolkitCodeBuildRole6AA4AB86
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitCodeBuildRole/DefaultPolicy/Resource
+  IndustryToolkitCodeBuildProject461DDFA4:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Cache:
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+        Type: LOCAL
+      EncryptionKey: alias/aws/s3
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      ServiceRole:
+        Fn::GetAtt:
+          - IndustryToolkitCodeBuildRole6AA4AB86
+          - Arn
+      Source:
+        BuildSpec:
+          Fn::Join:
+            - ""
+            - - |-
+                {
+                  "version": "0.2",
+                  "phases": {
+                    "install": {
+                      "commands": [
+                        "npm install -g @openapitools/openapi-generator-cli"
+                      ]
+                    },
+                    "pre_build": {
+                      "commands": [
+                        "echo 'Fetching GitHub credentials...'",
+                        "export GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id 
+              - Ref: IndustryToolkitCredentials556D8765
+              - |-2
+                 --query 'SecretString' --output text | jq -r '.\"'\"$SECRET_KEY\"'\"')"
+                      ]
+                    },
+                    "build": {
+                      "commands": [
+                        "echo 'Decoding the CONFIG map...'",
+                        "export DECODED_CONFIG=$(echo \"$CONFIG\" | jq -r 'to_entries | map(\"\\(.key)=\\(.value | @sh)\") | join(\",\")')",
+                        "echo $DECODED_CONFIG",
+                        "bash -c 'if [ -n \"$CONFIG\" ] && [ \"$DECODED_CONFIG\" != \"\" ]; then openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated --additional-properties \"$DECODED_CONFIG\" || exit 1; else openapi-generator-cli generate -i $MODEL -g $SERVICE_TYPE -o /tmp/generated || exit 1; fi'"
+                      ]
+                    },
+                    "post_build": {
+                      "commands": [
+                        "curl -H \"Authorization: token $GITHUB_TOKEN\" https://api.github.com/user/repos -d \"{\\\"name\\\": \\\"$SERVICE_NAME\\\", \\\"private\\\": true}\"",
+                        "cd /tmp/generated",
+                        "git config --global init.defaultBranch main",
+                        "git init",
+                        "git config --global user.email \"$TARGET_EMAIL\"",
+                        "git config --global user.name \"$TARGET_NAME\"",
+                        "git remote add origin https://$GITHUB_TOKEN@github.com/$TARGET_ORG/$SERVICE_NAME.git",
+                        "git add .",
+                        "git commit -m 'Initial Commit'",
+                        "git branch -M main",
+                        "git push -u origin main"
+                      ]
+                    }
+                  },
+                  "artifacts": {
+                    "files": [
+                      "/tmp/generated/**"
+                    ]
+                  }
+                }
+        Type: NO_SOURCE
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitCodeBuildProject/Resource
+  IndustryToolkitStepFunctionRole8D346D83:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitStepFunction/Role/Resource
+  IndustryToolkitStepFunctionRoleDefaultPolicyBD85313B:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - codebuild:BatchGetBuilds
+              - codebuild:BatchGetReports
+              - codebuild:StartBuild
+              - codebuild:StopBuild
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - IndustryToolkitCodeBuildProject461DDFA4
+                - Arn
+          - Action:
+              - events:DescribeRule
+              - events:PutRule
+              - events:PutTargets
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":events:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :rule/StepFunctionsGetEventForCodeBuildStartBuildRule
+        Version: "2012-10-17"
+      PolicyName: IndustryToolkitStepFunctionRoleDefaultPolicyBD85313B
+      Roles:
+        - Ref: IndustryToolkitStepFunctionRole8D346D83
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitStepFunction/Role/DefaultPolicy/Resource
+  IndustryToolkitStepFunctionF9F60E6A:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString:
+        Fn::Join:
+          - ""
+          - - '{"StartAt":"IndustryToolkitInvokeCodeBuild","States":{"IndustryToolkitInvokeCodeBuild":{"End":true,"Type":"Task","ResultPath":"$.BuildResult","Resource":"arn:'
+            - Ref: AWS::Partition
+            - :states:::codebuild:startBuild.sync","Parameters":{"ProjectName":"
+            - Ref: IndustryToolkitCodeBuildProject461DDFA4
+            - '","EnvironmentVariablesOverride":[{"Name":"SERVICE_NAME","Type":"PLAINTEXT","Value.$":"$.serviceName"},{"Name":"SERVICE_TYPE","Type":"PLAINTEXT","Value.$":"$.serviceType"},{"Name":"DESCRIPTION","Type":"PLAINTEXT","Value.$":"$.description"},{"Name":"MODEL","Type":"PLAINTEXT","Value.$":"$.model"},{"Name":"CONFIG","Type":"PLAINTEXT","Value.$":"States.JsonToString($.config)"},{"Name":"TARGET_ORG","Type":"PLAINTEXT","Value.$":"$.target.org"},{"Name":"SECRET_KEY","Type":"PLAINTEXT","Value.$":"$.target.secretKey"},{"Name":"TARGET_EMAIL","Type":"PLAINTEXT","Value.$":"$.target.email"},{"Name":"TARGET_NAME","Type":"PLAINTEXT","Value.$":"$.target.name"}]}}}}'
+      RoleArn:
+        Fn::GetAtt:
+          - IndustryToolkitStepFunctionRole8D346D83
+          - Arn
+    DependsOn:
+      - IndustryToolkitStepFunctionRoleDefaultPolicyBD85313B
+      - IndustryToolkitStepFunctionRole8D346D83
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitStepFunction/Resource
+  IndustryToolkitApiGatewayInvokeStepFunctionsRoleDC4054D1:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource:
+                  Ref: IndustryToolkitStepFunctionF9F60E6A
+            Version: "2012-10-17"
+          PolicyName: InvokeStepFunctions
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApiGatewayInvokeStepFunctionsRole/Resource
+  IndustryToolkitApi31864506:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: IndustryToolkitApi
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/Resource
+  IndustryToolkitApiDeployment4451A81Cdf00062fd6ef273dbe69719f420be93a:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      Description: Automatically created by the RestApi construct
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+    DependsOn:
+      - IndustryToolkitApiservicesPOST870425F4
+      - IndustryToolkitApiservices9F5B3AA3
+      - IndustryToolkitApiRequestModel32B718F7
+      - IndustryToolkitApiRequestValidator148B4642
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/Deployment/Resource
+  IndustryToolkitApiDeploymentStageprod60128CAB:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      AccessLogSetting:
+        DestinationArn:
+          Fn::GetAtt:
+            - ApiGatewayAccessLogsFB871B4C
+            - Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","user":"$context.identity.user","caller":"$context.identity.caller","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      DeploymentId:
+        Ref: IndustryToolkitApiDeployment4451A81Cdf00062fd6ef273dbe69719f420be93a
+      MethodSettings:
+        - DataTraceEnabled: true
+          HttpMethod: "*"
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          ResourcePath: /*
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+      StageName: prod
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/DeploymentStage.prod/Resource
+  IndustryToolkitApiservices9F5B3AA3:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - IndustryToolkitApi31864506
+          - RootResourceId
+      PathPart: services
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/Default/services/Resource
+  IndustryToolkitApiservicesPOST870425F4:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        Credentials:
+          Fn::GetAtt:
+            - IndustryToolkitApiGatewayInvokeStepFunctionsRoleDC4054D1
+            - Arn
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          - StatusCode: "202"
+          - StatusCode: "500"
+        RequestTemplates:
+          application/json:
+            Fn::Join:
+              - ""
+              - - |-2
+                  
+                                          {
+                                              "input": "$util.escapeJavaScript($input.body)",
+                                              "stateMachineArn": "
+                - Ref: IndustryToolkitStepFunctionF9F60E6A
+                - "\"
+
+                  \                        }
+
+                  \                        "
+        Type: AWS
+        Uri:
+          Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - ":apigateway:"
+              - Ref: AWS::Region
+              - :states:action/StartExecution
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          StatusCode: "202"
+        - ResponseModels:
+            application/json: Empty
+          StatusCode: "500"
+      RequestModels:
+        application/json:
+          Ref: IndustryToolkitApiRequestModel32B718F7
+      RequestValidatorId:
+        Ref: IndustryToolkitApiRequestValidator148B4642
+      ResourceId:
+        Ref: IndustryToolkitApiservices9F5B3AA3
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/Default/services/POST/Resource
+  IndustryToolkitApiRequestModel32B718F7:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+      Schema:
+        properties:
+          serviceName:
+            type: string
+          serviceType:
+            type: string
+          description:
+            type: string
+          model:
+            type: string
+          config:
+            type: object
+            additionalProperties: true
+          target:
+            type: object
+            properties:
+              org:
+                type: string
+              email:
+                type: string
+              name:
+                type: string
+        required:
+          - serviceName
+          - serviceType
+          - description
+          - model
+          - target
+        type: object
+        $schema: http://json-schema.org/draft-04/schema#
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/RequestModel/Resource
+  IndustryToolkitApiRequestValidator148B4642:
+    Type: AWS::ApiGateway::RequestValidator
+    Properties:
+      RestApiId:
+        Ref: IndustryToolkitApi31864506
+      ValidateRequestBody: true
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/IndustryToolkitApi/RequestValidator/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1WPQW/CMAyFfwv3kAnQJu04mLTL0Com7YpMakpomnSJI1RV+e9z06LRU77n2O/Za7l6fpWrBdzCUpX10uiT7L8JVC12Z1uAhwYJveD/Y29cFWT/6aoP72I7NNw5ibCR/TaqGmmoj8RVVB4pNGChQs/OWQ8dIyWhoZH9wRkcivktnNGqy/GZklCuxFPUppR94d0VVXaYkEMI23O0irSz4UgQ6iB3PLIdRvgWT5nmfflKwj2oi7Y5/FEnAa2uWN+g4/Uw0Fur84YTvmNrXNegzas8KHap7nYM3O+iV7iF8C8mo5H3SBdXDqWJ9ry6yTrDAX8jh/6A0SWQ8+PwvJbSzPsrUhtplsK8c7bUw+1JFB0n2aeNXK3ly+IatF76aEk3KA/j+wewKmxMGAIAAA==
+    Metadata:
+      aws:cdk:path: IndustryToolkitStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Outputs:
+  IndustryToolkitApiEndpoint95A31E07:
+    Value:
+      Fn::Join:
+        - ""
+        - - https://
+          - Ref: IndustryToolkitApi31864506
+          - .execute-api.
+          - Ref: AWS::Region
+          - "."
+          - Ref: AWS::URLSuffix
+          - /
+          - Ref: IndustryToolkitApiDeploymentStageprod60128CAB
+          - /
+  CredentialsSecretArn:
+    Description: The ARN of the credentials Secret in Secrets Manager
+    Value:
+      Ref: IndustryToolkitCredentials556D8765
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-3
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-4
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - il-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+      - Fn::Equals:
+          - Ref: AWS::Region
+          - us-west-2
+
