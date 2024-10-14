@@ -13,7 +13,6 @@ The Industry Toolkit is installed as a CDK script. Before we get started, you'll
 
 - AWS Credentials
 - Github account and a [PAT created](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
-- 
 
 ```bash
    # Clone this repository
