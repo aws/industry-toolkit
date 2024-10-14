@@ -1,5 +1,3 @@
-[![Launch in AWS Console](https://img.shields.io/badge/Launch%20in%20AWS%20Console-orange?style=for-the-badge&logo=amazon-aws)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=IndustryToolkit&templateURL=https://github.com/aws/industry-toolkit/tree/main/tools/industry-toolkit/cfn/industry-toolkit-stack.template.yaml&redirectId=SolutionWeb)
-
 # Industry Toolkit
 
 The Industry Toolkit is a comprehensive suite of tools designed to help developers build API-first, composable architectures. It streamlines the process of creating and managing APIs, SDKs, documentation, and server implementations across various languages.
