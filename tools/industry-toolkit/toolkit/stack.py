@@ -22,7 +22,7 @@ class IndustryToolkitStack(Stack):
         log_group_name_param = CfnParameter(self, "LogGroupPrefix",
             type="String",
             default="/tools/industrytoolkit/",
-            description="Log group prefix for all Cloudwatch logs. "
+            description="Log group prefix for all Cloudwatch logs."
         )
 
         github_secret_name_param = CfnParameter(self, "IndustryToolkitSecretName",
@@ -37,7 +37,7 @@ class IndustryToolkitStack(Stack):
             description="Name of the role the CodeBuild pipeline will use. This role will be created."
         )
 
-        random_suffix = Names.unique_id(self)[:4]
+        random_suffix = Names.unique_id(self)[:4].lower()
         artifacts_bucket_name_param = CfnParameter(self, "ArtifactsBucketName",
             type="String",
             default=f"industry-toolkit-artifacts-bucket-{random_suffix}",
@@ -47,6 +47,17 @@ class IndustryToolkitStack(Stack):
         log_group = logs.LogGroup(self, "ApiGatewayAccessLogs",
                                   log_group_name=log_group_name_param.value_as_string + 'apigateway',
                                   removal_policy=RemovalPolicy.DESTROY)
+
+        cloudwatch_logs_role = iam.Role(self, "ApiGatewayCloudWatchRole",
+            assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonAPIGatewayPushToCloudWatchLogs")
+            ]
+        )
+
+        api_gateway_account = apigateway.CfnAccount(self, "ApiGatewayAccount",
+            cloud_watch_role_arn=cloudwatch_logs_role.role_arn
+        )
 
         artifacts_bucket = s3.Bucket(self, "IndustryToolkitArtifactsBucket",
                                      bucket_name=artifacts_bucket_name_param.value_as_string)
