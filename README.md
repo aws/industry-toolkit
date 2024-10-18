@@ -20,7 +20,9 @@ The Industry Toolkit is installed as a CDK script. Before we get started, you'll
    
    # Install requirements
    cd tools/industry-toolkit
-   pip install -r requirements.txt
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip3 install -r requirements.txt
    
    # Use CDK to deploy
    cdk synth
