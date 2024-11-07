@@ -3,7 +3,7 @@ name: Build and Publish Docker Image to ECR
 on:
   push:
     paths:
-      - 'lambda-runtime-image/**'
+      - 'tools/bootstrapper-base-image/**'
     branches:
       - main
   workflow_dispatch:
@@ -25,11 +25,12 @@ jobs:
 
       - name: Log in to Amazon ECR Public
         run: |
-          aws ecr-public get-login-password --region us-west-2 | docker login --username AWS --password-stdin public.ecr.aws
+          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-west-2)
+          docker login -u AWS -p $AWS_ECR_LOGIN public.ecr.aws
 
       - name: Build Docker image
         run: |
-          cd lambda-runtime-image
+          cd tools/bootstrapper-base-image
           docker build -t industry-toolkit-base-image:latest .
 
       - name: Tag Docker image for ECR
