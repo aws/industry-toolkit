@@ -25,7 +25,7 @@ jobs:
 
       - name: Log in to Amazon ECR Public
         run: |
-          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-west-2)
+          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-east-1)
           docker login -u AWS -p $AWS_ECR_LOGIN public.ecr.aws
 
       - name: Build Docker image
