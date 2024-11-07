@@ -6,6 +6,7 @@ on:
       - 'tools/bootstrapper-base-image/**'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-and-publish:
