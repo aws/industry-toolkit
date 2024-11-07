@@ -37,3 +37,4 @@ jobs:
           ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           docker push public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
+          
