@@ -16,15 +16,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
       - name: Log in to Amazon ECR Public
-        env:
-          AWS_REGION: us-west-2
         run: |
-          aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
+          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-west-2)
+          docker login -u AWS -p $AWS_ECR_LOGIN public.ecr.aws
 
       - name: Build Docker image
         run: |
-          cd lambda-runtime-image
+          cd tools/bootstrapper-base-image
           docker build -t industry-toolkit-base-image:latest .
 
       - name: Tag Docker image for ECR
@@ -38,4 +44,3 @@ jobs:
           ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           docker push public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
-          
