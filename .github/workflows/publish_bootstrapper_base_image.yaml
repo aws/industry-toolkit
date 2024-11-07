@@ -34,13 +34,9 @@ jobs:
           docker build -t industry-toolkit-base-image:latest .
 
       - name: Tag Docker image for ECR
-        env:
-          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          docker tag industry-toolkit-base-image:latest public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
+          docker tag industry-toolkit-base-image:latest public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
 
       - name: Push Docker image to ECR
-        env:
-          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          docker push public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
+          docker push public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
