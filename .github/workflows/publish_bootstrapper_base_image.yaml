@@ -1,0 +1,39 @@
+name: Build and Publish Docker Image to ECR
+
+on:
+  push:
+    paths:
+      - 'tools/bootstrapper-base-image/**'
+    branches:
+      - main
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Amazon ECR Public
+        env:
+          AWS_REGION: us-west-2
+        run: |
+          aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build Docker image
+        run: |
+          cd lambda-runtime-image
+          docker build -t industry-toolkit-base-image:latest .
+
+      - name: Tag Docker image for ECR
+        env:
+          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          docker tag industry-toolkit-base-image:latest public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
+
+      - name: Push Docker image to ECR
+        env:
+          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          docker push public.ecr.aws/$ACCOUNT_ID/industry-toolkit-base-image:latest
