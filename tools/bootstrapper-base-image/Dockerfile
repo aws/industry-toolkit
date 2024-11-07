@@ -1,42 +1,12 @@
-name: Build and Publish Docker Image to ECR
+FROM public.ecr.aws/lambda/python:3.12
 
-on:
-  push:
-    paths:
-      - 'tools/bootstrapper-base-image/**'
-    branches:
-      - main
-  workflow_dispatch:
+RUN microdnf install -y tar gzip java-17-amazon-corretto-headless && \
+    microdnf clean all
 
-jobs:
-  build-and-publish:
-    runs-on: ubuntu-latest
+ENV OPENAPI_GENERATOR_CLI_VERSION=7.9.0
+ENV OPENAPI_GENERATOR_CLI_JAR=/opt/openapi-generator-cli.jar
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+RUN curl -L https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/$OPENAPI_GENERATOR_CLI_VERSION/openapi-generator-cli-$OPENAPI_GENERATOR_CLI_VERSION.jar \
+    -o $OPENAPI_GENERATOR_CLI_JAR
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Log in to Amazon ECR Public
-        run: |
-          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-east-1)
-          docker login -u AWS -p $AWS_ECR_LOGIN public.ecr.aws
-
-      - name: Build Docker image
-        run: |
-          cd tools/bootstrapper-base-image
-          docker build -t industry-toolkit-base-image:latest .
-
-      - name: Tag Docker image for ECR
-        run: |
-          docker tag industry-toolkit-base-image:latest public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
+ENV PATH="${PATH}:/opt"
