@@ -14,6 +14,8 @@ from aws_cdk import (
     Names
 )
 from constructs import Construct
+import uuid
+
 
 class IndustryToolkitStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
@@ -37,7 +39,7 @@ class IndustryToolkitStack(Stack):
             description="Name of the role the CodeBuild pipeline will use. This role will be created."
         )
 
-        random_suffix = Names.unique_id(self)[:4].lower()
+        random_suffix = str(uuid.uuid4())[:4].lower()
         artifacts_bucket_name_param = CfnParameter(self, "ArtifactsBucketName",
             type="String",
             default=f"industry-toolkit-artifacts-bucket-{random_suffix}",
