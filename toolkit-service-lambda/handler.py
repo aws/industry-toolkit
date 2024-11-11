@@ -17,7 +17,7 @@ from source_repo.github_source_repo import GitHubSourceRepo
 logger = Logger()
 app = APIGatewayRestResolver()
 dynamodb = boto3.resource('dynamodb')
-services_table_name = os.getenv("services_table_name")
+services_table_name = os.getenv("SERVICES_TABLE_NAME")
 services_table = dynamodb.Table(services_table_name)
 
 
