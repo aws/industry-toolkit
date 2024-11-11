@@ -1,34 +1,52 @@
 import json
-import boto3
-from flask import Flask, request
-from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
-from aws_lambda_powertools.utilities.data_classes.api_gateway_proxy_event import Response
+from flask import Flask, jsonify, request
+from aws_lambda_powertools.logging import Logger
+from aws_lambda_powertools.tracing import Tracer
+from aws_lambda_powertools.metrics import Metrics, MetricUnit
 
+# Initialize Logger, Tracer, and Metrics
+logger = Logger()
+tracer = Tracer()
+metrics = Metrics(namespace="MyApp", service="MyService")
+
+# Initialize Flask app
 app = Flask(__name__)
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table("ServicesTable")
 
-@app.route('/services', methods=['GET'])
+@app.route("/services", methods=["GET"])
+@tracer.capture_method
 def get_service():
-    service_id = request.args.get('id')
-    if not service_id:
-        return {"error": "Missing id parameter"}, 400
-    response = table.get_item(Key={'id': service_id})
-    if 'Item' not in response:
-        return {"error": "Record not found"}, 404
-    return response['Item'], 200
+    """Handles GET requests for /services"""
+    logger.info("Received GET request for /services")
+    
+    # Add metrics for monitoring GET requests
+    metrics.add_metric(name="GetServiceRequests", unit=MetricUnit.Count, value=1)
+    
+    # Example response
+    response = {
+        "message": "This is a GET response from /services",
+        "data": {"serviceId": 123, "serviceName": "ExampleService"}
+    }
+    return jsonify(response), 200
 
-@app.route('/services', methods=['POST'])
-def create_service():
-    data = request.get_json()
-    if not data:
-        return {"error": "Missing request body"}, 400
+@app.route("/services", methods=["POST"])
+@tracer.capture_method
+def post_service():
+    """Handles POST requests for /services"""
+    logger.info("Received POST request for /services")
+    
+    # Parse the JSON payload
+    data = request.json
+    service_name = data.get("serviceName", "Unknown Service")
 
-    print(data)
-    return {"message": "Service created successfully"}, 201
+    logger.debug(f"Paylod: {data}")
+    
+    # Log metrics for POST requests
+    metrics.add_metric(name="PostServiceRequests", unit=MetricUnit.Count, value=1)
+    
+    # Example response
+    response = {
+        "message": f"Received service: {service_name}",
+        "data": data
+    }
+    return jsonify(response), 201
 
-def lambda_handler(event, context):
-    print(here)
-    event = APIGatewayProxyEvent(event)
-    print(event)
-    return Response(app.wsgi_app(event), context)
