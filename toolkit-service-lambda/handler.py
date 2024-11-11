@@ -1,9 +1,9 @@
+import boto3
 from aws_lambda_powertools.event_handler import APIGatewayRestResolver
-from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
+from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.logging import Logger
-
 from urllib.parse import urlparse
-
+from datetime import datetime
 import uuid
 import os
 
@@ -16,6 +16,9 @@ from source_repo.github_source_repo import GitHubSourceRepo
 
 logger = Logger()
 app = APIGatewayRestResolver()
+dynamodb = boto3.resource('dynamodb')
+services_table_name = os.getenv("services_table_name")
+services_table = dynamodb.Table(services_table_name)
 
 
 @app.post("/services")
@@ -32,7 +35,6 @@ def post_services():
 
     project_type = body.get('serviceType')
     project_config = body.get('config', {})
-
     service_name = body.get('serviceName')
     model_url = body.get('model')
     target_info = body.get('target')
@@ -49,14 +51,10 @@ def post_services():
 
     codegen = OpenApiCodegen()
     codegen.generate_project(project_id, body)
-
     dockerfile = generator.generate_dockerfile(project_id, project_config)
-
     pipeline = JavaMavenPipelineGenerator()
     buildspec = pipeline.generate_pipeline(project_id, project_config)
-
     infra_path = infra_generator.generate_infra(project_id, project_config)
-
     repo.commit(project_dir, "Initial commit")
 
     pipeline_name = f"{service_name}-pipeline"
@@ -67,9 +65,41 @@ def post_services():
     aws_pipeline = AwsCodePipeline()
     aws_pipeline.create_pipeline(pipeline_name, repository_name, branch_name, buildspec_location)
 
-    logger.info("Project created successfully for service %s", service_name)
+    timestamp = datetime.utcnow().isoformat()
+    item = {
+        "project_id": project_id,
+        "project_name": service_name,
+        "project_type": project_type,
+        "description": body.get("description", ""),
+        "github_repo": target_info["repo"],
+        "code_pipeline": pipeline_name,
+        "created_timestamp": timestamp,
+        "updated_timestamp": timestamp,
+        "metadata": {
+            "model": model_url,
+            "config": project_config
+        }
+    }
 
-    return {"message": "pong"}
+    services_table.put_item(Item=item)
+    logger.info(f"Successfully inserted project {project_id} into DynamoDB")
+
+    return item
+
+
+@app.get("/services/<project_id>")
+def get_service(project_id: str):
+    try:
+        response = services_table.get_item(Key={"project_id": project_id})
+        item = response.get("Item")
+
+        if not item:
+            return {"message": f"Service with project_id {project_id} not found"}, 404
+
+        return item, 200
+    except Exception as e:
+        logger.error(f"Failed to retrieve project {project_id}: {e}")
+        return {"message": "An error occurred while retrieving the service"}, 500
 
 
 @logger.inject_lambda_context
