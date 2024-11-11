@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - 'toolkit-service-lambda/**'
-    branches:           # Trigger on all branches
-      - '*'
+    branches:
+      - '**'
   workflow_dispatch:
 
 jobs:
