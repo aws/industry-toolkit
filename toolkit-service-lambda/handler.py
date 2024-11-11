@@ -81,7 +81,12 @@ def post_services():
         }
     }
 
-    services_table.put_item(Item=item)
+    try:
+        services_table.put_item(Item=item)
+        logger.info(f"Successfully inserted project {project_id} into DynamoDB: {item}")
+    except Exception as e:
+        logger.error(f"Failed to insert item: {e}")
+
     logger.info(f"Successfully inserted project {project_id} into DynamoDB")
 
     return item
@@ -90,7 +95,7 @@ def post_services():
 @app.get("/services/<project_id>")
 def get_service(project_id: str):
     try:
-        response = services_table.get_item(Key={"project_id": project_id})
+        response = services_table.get_item(Key={"id": project_id})
         item = response.get("Item")
 
         if not item:
