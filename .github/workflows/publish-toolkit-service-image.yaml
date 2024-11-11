@@ -30,7 +30,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd services/toolkit-lambda
+          cd toolkit-service-lambda
           docker build -t service-handler-image:latest .
 
       - name: Tag Docker image for ECR
