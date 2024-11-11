@@ -12,7 +12,6 @@ metrics = Metrics(namespace="MyApp", service="MyService")
 # Initialize Flask app
 app = Flask(__name__)
 
-asdf
 @app.route("/services/<id>", methods=["GET"])
 @tracer.capture_method
 def get_service(id):
