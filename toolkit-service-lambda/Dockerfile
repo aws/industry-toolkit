@@ -11,7 +11,7 @@ RUN curl -L https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cl
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-asdf
+
 COPY . ${LAMBDA_TASK_ROOT}
 
 CMD ["handler.lambda_handler"]
