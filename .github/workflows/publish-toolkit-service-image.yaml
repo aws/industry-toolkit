@@ -22,11 +22,14 @@ jobs:
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           BRANCH_NAME_SAFE=${BRANCH_NAME//\//-}
           if [ "$BRANCH_NAME" = "main" ]; then
-            echo "tag_suffix="
+            tag_suffix=""
+            is_main=true
           else
-            echo "tag_suffix=-$BRANCH_NAME_SAFE"
+            tag_suffix="-$BRANCH_NAME_SAFE"
+            is_main=false
           fi
-          echo "::set-output name=tag_suffix::$tag_suffix"
+          echo "tag_suffix=$tag_suffix" >> $GITHUB_ENV
+          echo "is_main=$is_main" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -50,10 +53,14 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
-          docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ steps.branch_name.outputs.tag_suffix }}
+          if [ "$is_main" = "true" ]; then
+            docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
+          fi
+          docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ env.tag_suffix }}
 
       - name: Push Docker image to ECR
         run: |
-          docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
-          docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ steps.branch_name.outputs.tag_suffix }}
+          if [ "$is_main" = "true" ]; then
+            docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
+          fi
+          docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ env.tag_suffix }}
