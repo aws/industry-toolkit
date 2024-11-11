@@ -1,0 +1,54 @@
+from codebuild.pipeline_generator import PipelineGenerator
+import boto3
+import os
+
+class JavaMavenPipelineGenerator(PipelineGenerator):
+
+    def generate_pipeline(self, project_id: str, project_config: dict) -> str:
+        project_dir = self.create_project_dir(project_id)
+        return self.write_buildspec(project_dir)
+
+    def write_buildspec(self, project_dir: str):
+        buildspec_path = os.path.join(project_dir, "buildspec.yaml")
+
+        ecr_path = os.getenv("ECR_REGISTRY_URI")
+        ecr_registry_uri, ecr_repository_name = ecr_path.split("/", 1)
+        aws_default_region = boto3.session.Session().region_name
+
+        buildspec_content = f"""
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: 21
+    commands:
+      - echo "Installing Maven..."
+      - mvn --version
+  build:
+    commands:
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY_URI
+      - cd app
+      - mvn clean install
+      - docker build -t $ECR_REPOSITORY_NAME:latest -f Dockerfile .
+      - docker tag $ECR_REPOSITORY_NAME:latest $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
+  post_build:
+    commands:
+      - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
+      - UNIQUE_FILE="imageDetail_$CODEBUILD_BUILD_ID.txt"
+      - echo "IMAGE_URI=$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest" > $UNIQUE_FILE
+artifacts:
+  files:
+    - '**/*'
+    - "imageDetail_$CODEBUILD_BUILD_ID.txt"
+  base-directory: .
+env:
+  variables:
+    ECR_REPOSITORY_NAME: {ecr_repository_name}
+    ECR_REGISTRY_URI: {ecr_registry_uri}
+    AWS_DEFAULT_REGION: {aws_default_region}
+"""
+        with open(buildspec_path, 'w') as f:
+            f.write(buildspec_content)
+
+        return buildspec_path
