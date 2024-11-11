@@ -24,9 +24,12 @@ jobs:
           aws-region: us-east-1
 
       - name: Log in to Amazon ECR Public
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-west-1
         run: |
-          export AWS_ECR_LOGIN=$(aws ecr-public get-login-password --region us-east-1)
-          docker login -u AWS -p $AWS_ECR_LOGIN public.ecr.aws
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 211125507740.dkr.ecr.$AWS_REGION.amazonaws.com
 
       - name: Build Docker image
         run: |
@@ -35,8 +38,8 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag service-handler-image:latest public.ecr.aws/m2c6h9n1/industry-toolkit/service-handler-image:latest
+          docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push public.ecr.aws/m2c6h9n1/industry-toolkit/service-handler-image:latest
+          docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
