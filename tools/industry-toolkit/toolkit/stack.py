@@ -266,21 +266,22 @@ class IndustryToolkitStack(Stack):
 #         container.add_port_mappings(ecs.PortMapping(container_port=5000))
 #
 
-        ecr_repository_test = ecr.Repository.from_repository_arn(
-            self,
-            "ECRRepository",
-            repository_arn="arn:aws:ecr:us-west-2:211125507740:repository/greg/test-lambda-base"
+        repo = ecr.Repository.from_repository_arn(
+            self, "IndustryToolkitRepo",
+            "arn:aws:ecr:us-west-2:211125507740:repository/industry-toolkit/service-lambda-handler"
         )
 
-        lambda_function_test = lambda_.DockerImageFunction(
+        lambda_function_test = lambda_.Function(
             self,
             "MyDockerLambdaFunction",
-            code=lambda_.DockerImageCode.from_ecr(
-                repository=ecr_repository_test,
-                tag="latest"
+            code=lambda_.Code.from_ecr_image(
+                repository=repo,
+                tag="latest-feat-bootsrapper-v2"
             ),
+            handler=lambda_.Handler.FROM_IMAGE,
+            runtime=lambda_.Runtime.FROM_IMAGE,
             memory_size=1024,
-            timeout=Duration.seconds(42),
+            timeout=Duration.seconds(43),
             environment={
                 "LOG_LEVEL": bootstrapper_log_level_param.value_as_string,
                 "CODEBUILD_ROLE_ARN": project_codebuild_role.role_arn,
