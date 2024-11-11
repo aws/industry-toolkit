@@ -3,7 +3,7 @@ name: Build and Publish Service Lambda
 on:
   push:
     paths:
-      - 'services/toolkit-lambda/**'
+      - 'toolkit-service-lambda/**'
     branches:
       - main
   workflow_dispatch:
