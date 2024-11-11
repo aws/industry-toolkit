@@ -67,7 +67,7 @@ def post_services():
 
     timestamp = datetime.utcnow().isoformat()
     item = {
-        "project_id": project_id,
+        "id": project_id,
         "project_name": service_name,
         "project_type": project_type,
         "description": body.get("description", ""),
