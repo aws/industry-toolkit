@@ -3,7 +3,7 @@ name: Build and Publish Docker Image to ECR
 on:
   push:
     paths:
-      - 'tools/bootstrapper-base-image/**'
+      - 'services/toolkit-lambda/**'
     branches:
       - main
   workflow_dispatch:
@@ -30,13 +30,13 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd tools/bootstrapper-base-image
-          docker build -t industry-toolkit-base-image:latest .
+          cd services/toolkit-lambda
+          docker build -t service-handler-image:latest .
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag industry-toolkit-base-image:latest public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
+          docker tag service-handler-image:latest public.ecr.aws/m2c6h9n1/industry-toolkit/service-handler-image:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push public.ecr.aws/m2c6h9n1/industry-toolkit/bootstrapper-base-image:latest
+          docker push public.ecr.aws/m2c6h9n1/industry-toolkit/service-handler-image:latest
