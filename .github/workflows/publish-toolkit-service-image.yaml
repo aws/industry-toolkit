@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - 'toolkit-service-lambda/**'
-    branches:
-      - main
+    branches:           # Trigger on all branches
+      - '*'
   workflow_dispatch:
 
 jobs:
@@ -15,6 +15,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Determine Branch Name
+        id: branch_name
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          BRANCH_NAME_SAFE=${BRANCH_NAME//\//-}
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "tag_suffix="
+          else
+            echo "tag_suffix=-$BRANCH_NAME_SAFE"
+          fi
+          echo "::set-output name=tag_suffix::$tag_suffix"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -39,7 +51,9 @@ jobs:
       - name: Tag Docker image for ECR
         run: |
           docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
+          docker tag service-handler-image:latest 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ steps.branch_name.outputs.tag_suffix }}
 
       - name: Push Docker image to ECR
         run: |
           docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest
+          docker push 211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit/service-lambda-handler:latest${{ steps.branch_name.outputs.tag_suffix }}
