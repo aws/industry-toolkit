@@ -13,19 +13,17 @@ metrics = Metrics(namespace="MyApp", service="MyService")
 app = Flask(__name__)
 
 
-@app.route("/services", methods=["GET"])
+@app.route("/services/<id>", methods=["GET"])
 @tracer.capture_method
-def get_service():
-    """Handles GET requests for /services"""
-    logger.info("Received GET request for /services")
+def get_service(id):
+    """Handles GET requests for /services/{id}"""
+    logger.info(f"Received GET request for /services/{id}")
 
-    # Add metrics for monitoring GET requests
     metrics.add_metric(name="GetServiceRequests", unit=MetricUnit.Count, value=1)
 
-    # Example response
     response = {
-        "message": "This is a GET response from /services",
-        "data": {"serviceId": 123, "serviceName": "ExampleService"}
+        "message": f"This is a GET response for service with ID: {id}",
+        "data": {"serviceId": id, "serviceName": "ExampleService"}
     }
     return jsonify(response), 200
 
