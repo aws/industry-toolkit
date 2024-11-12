@@ -53,7 +53,12 @@ env:
     ECR_REGISTRY_URI: {ecr_registry_uri}
     AWS_DEFAULT_REGION: {aws_default_region}
 """
-        with open(buildspec_path, 'w') as f:
-            f.write(buildspec_content)
+        try:
+            with open(buildspec_path, 'w') as f:
+                f.write(buildspec_content)
+            print(f"Buildspec written successfully to {buildspec_path}")
+        except Exception as e:
+            print(f"Failed to write buildspec.yaml: {e}")
+            raise
 
         return buildspec_path
