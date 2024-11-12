@@ -94,7 +94,7 @@ def post_services():
         "id": project_id,
         "project_name": service_info['name'],
         "project_type": project_type,
-        "description": service_info("description", ""),
+        "description": service_info["description"],
         "github_repo": scm_info["repo"],
         "created_timestamp": timestamp,
         "updated_timestamp": timestamp,

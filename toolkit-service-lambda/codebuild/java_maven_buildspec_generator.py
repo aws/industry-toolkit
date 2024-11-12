@@ -14,6 +14,8 @@ class JavaMavenBuildspecGenerator(BuildspecGenerator):
     def write_buildspec(self, project_dir: str):
         buildspec_path = os.path.join(project_dir, "buildspec.yaml")
 
+        print(f"Writing buildspec.yaml to {buildspec_path}")
+
         ecr_path = os.getenv("ECR_REGISTRY_URI")
         ecr_registry_uri, ecr_repository_name = ecr_path.split("/", 1)
         aws_default_region = boto3.session.Session().region_name
