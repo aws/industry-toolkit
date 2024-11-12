@@ -25,7 +25,6 @@ from codegen.codegen import Codegen
 class OpenApiGenAiCodegen(Codegen):
     def generate_project(self, project_id: str, service_info: str):
         service_type = service_info["type"]
-        model_location = service_info["openapi"]["model"]
 
         config = service_info["openapi"].get("config", {})
 
