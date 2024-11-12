@@ -40,12 +40,10 @@ phases:
   post_build:
     commands:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
-      - UNIQUE_FILE="imageDetail_$CODEBUILD_BUILD_ID.txt"
-      - echo "IMAGE_URI=$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest" > $UNIQUE_FILE
+      - echo "{{\\"imageTag\\":\\"$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest\\"}}" > build_output.json
 artifacts:
   files:
-    - '**/*'
-    - "imageDetail_$CODEBUILD_BUILD_ID.txt"
+    - build_output.json
   base-directory: .
 env:
   variables:
