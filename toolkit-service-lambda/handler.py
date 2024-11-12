@@ -10,6 +10,7 @@ from datetime import datetime
 
 from codebuild.java_maven_buildspec_generator import JavaMavenBuildspecGenerator
 from codegen.open_api_codegen import OpenApiCodegen
+from codegen.open_api_genai_codegen import OpenApiGenAiCodegen
 from docker.java_spring_boot_generator import JavaSpringBootDockerfileGenerator
 from infra.cloudformation_infra_generator import CloudFormationInfraGenerator
 from pipeline.aws_code_pipeline import AwsCodePipeline
@@ -42,12 +43,14 @@ def post_services():
     # Generate project source code
     logger.info(f"Creating project type '{service_type}'...")
 
-    print(service_info)
     if "openapi" in service_info:
         codegen = OpenApiCodegen()
-        codegen.generate_project(project_id, service_info)
+    if "openapi-gen" in service_info:
+        codegen = OpenApiGenAiCodegen()
     else:
         raise ValueError(f"Unsupported model type.")
+
+    codegen.generate_project(project_id, service_info)
 
     # Create Dockerfile
     logger.info(f"Creating Dockerfile for project type {service_type}...")

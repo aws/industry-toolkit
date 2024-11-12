@@ -1,15 +1,15 @@
 import subprocess
-import requests
+import boto3
 import os
 
 from codegen.codegen import Codegen
 
 # "service": {
 #   "type": "spring",
-#   "name": "my-service",
+#   "name": "my-service-01",
 #   "description": "My new service",
-#   "openapi": {
-#     "model": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/product-catalog/model/product-catalog.openapi.yaml",
+#   "openapi-genai": {
+#     "prompt": "Create me a shopping cart service with OpenAPI that has operation to create, read, update, and delete carts, and to add and remove CartItems to a cart. Model objects should end in Request or Response.",
 #     "config": {
 #       "basePackage": "com.amazonaws.example",
 #       "modelPackage": "com.amazonaws.example.model",
@@ -22,7 +22,7 @@ from codegen.codegen import Codegen
 # }
 
 
-class OpenApiCodegen(Codegen):
+class OpenApiGenAiCodegen(Codegen):
     def generate_project(self, project_id: str, service_info: str):
         service_type = service_info["type"]
         model_location = service_info["openapi"]["model"]
@@ -35,19 +35,12 @@ class OpenApiCodegen(Codegen):
         model_dir = f"/tmp/{project_id}/model"
         os.makedirs(model_dir, exist_ok=True)
 
-        model_filename = os.path.basename(model_location)
+        model_filename = service_info["name"] + ".yaml"
         model_local_path = os.path.join(model_dir, model_filename)
 
-        try:
-            response = requests.get(model_location)
-            response.raise_for_status()
+        prompt = service_info["openapi-gen"]["prompt"]
 
-            with open(model_local_path, "wb") as file:
-                file.write(response.content)
-            print(f"Model downloaded successfully to {model_local_path}")
-        except requests.RequestException as e:
-            print(f"Failed to download model: {e}")
-            raise RuntimeError(f"Error downloading model: {e}")
+        self.generate_model_with_bedrock(prompt, model_local_path)
 
         command = [
             "java",
@@ -66,3 +59,22 @@ class OpenApiCodegen(Codegen):
         except subprocess.CalledProcessError as e:
             print(f"Failed to generate project: {e}")
             raise RuntimeError(f"Error running OpenAPI Generator: {e.stderr}")
+
+    def generate_model_with_bedrock(self, prompt: str, output_path: str):
+        client = boto3.client("bedrock-runtime")
+        model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+
+        formatted_prompt = f"Human: {prompt}\nAssistant:"
+
+        response = client.invoke_model(
+            modelId=model_id,
+            body=formatted_prompt,
+            accept="application/json",
+            contentType="text/plain"
+        )
+
+        response_body = response["body"].read().decode("utf-8")
+
+        with open(output_path, "w") as model_file:
+            model_file.write(response_body)
+        print(f"Generated model saved to {output_path}")
