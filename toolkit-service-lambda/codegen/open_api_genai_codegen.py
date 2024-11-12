@@ -1,5 +1,6 @@
 import subprocess
 import boto3
+import json
 import os
 
 from codegen.codegen import Codegen
@@ -8,7 +9,7 @@ from codegen.codegen import Codegen
 #   "type": "spring",
 #   "name": "my-service-01",
 #   "description": "My new service",
-#   "openapi-genai": {
+#   "openapi-gen": {
 #     "prompt": "Create me a shopping cart service with OpenAPI that has operation to create, read, update, and delete carts, and to add and remove CartItems to a cart. Model objects should end in Request or Response.",
 #     "config": {
 #       "basePackage": "com.amazonaws.example",
@@ -61,19 +62,33 @@ class OpenApiGenAiCodegen(Codegen):
 
     def generate_model_with_bedrock(self, prompt: str, output_path: str):
         client = boto3.client("bedrock-runtime")
-        model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
         formatted_prompt = f"Human: {prompt}\nAssistant:"
 
         response = client.invoke_model(
-            modelId=model_id,
-            body=formatted_prompt,
-            accept="application/json",
-            contentType="text/plain"
+            modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+            contentType='application/json',
+            accept='application/json',
+            body=json.dumps({
+                "messages": [
+                    {"role": "user", "content": formatted_prompt}
+                ],
+                "max_tokens": 10000,
+                "anthropic_version": "bedrock-2023-05-31"
+            })
         )
 
-        response_body = response["body"].read().decode("utf-8")
+        model_response = json.loads(response["body"].read())
+        response_text = model_response["content"][0]["text"]
+
+        split_text = response_text.split('```yaml', 1)
+
+        if len(split_text) > 1:
+            generated_content = split_text[1].split('```', 1)[0].strip()
+        else:
+            generated_content = ""
 
         with open(output_path, "w") as model_file:
-            model_file.write(response_body)
+            model_file.write(generated_content)
         print(f"Generated model saved to {output_path}")
+        print(generated_content)
