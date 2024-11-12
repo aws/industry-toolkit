@@ -70,6 +70,10 @@ def post_services():
     else:
         raise ValueError(f"Unsupported iac_type type: {iac_type}")
 
+    # Create AWS CodeBuild buildspec file
+    buildspec = JavaMavenBuildspecGenerator()
+    buildspec.generate_buildspec(project_id, service_info)
+
     # Create SCM repo
     logger.info(f"Creating SCM repo type '{scm_type}'...")
 
@@ -79,10 +83,6 @@ def post_services():
         repo.commit(project_dir, "Initial commit")
     else:
         raise ValueError(f"Unsupported scm_type type: {scm_type}")
-
-    # Create AWS CodeBuild buildspec file
-    buildspec = JavaMavenBuildspecGenerator()
-    buildspec.generate_buildspec(project_id, service_info)
 
     # Create AWS CodePipeline
     aws_pipeline = AwsCodePipeline()
