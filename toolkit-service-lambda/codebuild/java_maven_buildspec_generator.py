@@ -1,11 +1,14 @@
-from codebuild.pipeline_generator import PipelineGenerator
+from codebuild.buildspec_generator import BuildspecGenerator
+
 import boto3
 import os
 
-class JavaMavenPipelineGenerator(PipelineGenerator):
 
-    def generate_pipeline(self, project_id: str, project_config: dict) -> str:
+class JavaMavenBuildspecGenerator(BuildspecGenerator):
+
+    def generate_buildspec(self, project_id: str, service_info: dict) -> str:
         project_dir = self.create_project_dir(project_id)
+
         return self.write_buildspec(project_dir)
 
     def write_buildspec(self, project_dir: str):

@@ -1,13 +1,14 @@
 import boto3
-from aws_lambda_powertools.event_handler import APIGatewayRestResolver
-from aws_lambda_powertools.utilities.typing import LambdaContext
-from aws_lambda_powertools.logging import Logger
-from urllib.parse import urlparse
-from datetime import datetime
+import json
 import uuid
 import os
 
-from codebuild.java_maven_pipeline_generator import JavaMavenPipelineGenerator
+from aws_lambda_powertools.event_handler import APIGatewayRestResolver
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.logging import Logger
+from datetime import datetime
+
+from codebuild.java_maven_buildspec_generator import JavaMavenBuildspecGenerator
 from codegen.open_api_codegen import OpenApiCodegen
 from docker.java_spring_boot_generator import JavaSpringBootDockerfileGenerator
 from infra.cloudformation_infra_generator import CloudFormationInfraGenerator
@@ -26,6 +27,11 @@ def post_services():
     body = app.current_event.json_body
     logger.info(f"Received POST request body: {body}")
 
+    service_info = body["service"]
+    service_type = service_info["type"]
+    scm_type, scm_info = next(iter(body.get("scm", {}).items()), (None, {}))
+    iac_type, iac_info = next(iter(body.get("iac", {}).items()), (None, {}))
+
     project_id = str(uuid.uuid4())
     logger.info(f"Creating project with id {project_id}...")
 
@@ -33,51 +39,66 @@ def post_services():
     app_dir = f"{project_dir}/app"
     os.makedirs(app_dir, exist_ok=True)
 
-    project_type = body.get('serviceType')
-    project_config = body.get('config', {})
-    service_name = body.get('serviceName')
-    model_url = body.get('model')
-    target_info = body.get('target')
+    # Generate project source code
+    logger.info(f"Creating project type '{service_type}'...")
 
-    if project_type == 'spring':
+    print(service_info)
+    if "openapi" in service_info:
+        codegen = OpenApiCodegen()
+        codegen.generate_project(project_id, service_info)
+    else:
+        raise ValueError(f"Unsupported model type.")
+
+    # Create Dockerfile
+    logger.info(f"Creating Dockerfile for project type {service_type}...")
+
+    project_type = service_info["type"]
+
+    if service_type == 'spring':
         generator = JavaSpringBootDockerfileGenerator()
-        infra_generator = CloudFormationInfraGenerator()
+        generator.generate_dockerfile(project_id)
     else:
         raise ValueError(f"Unsupported project type: {project_type}")
 
-    logger.info("Creating repo: %s...", target_info["repo"])
-    repo = GitHubSourceRepo(target_info)
-    repo.create_repo()
+    # Generate IaC code
+    logger.info(f"Creating IaC code for {iac_type}...")
 
-    codegen = OpenApiCodegen()
-    codegen.generate_project(project_id, body)
-    dockerfile = generator.generate_dockerfile(project_id, project_config)
-    pipeline = JavaMavenPipelineGenerator()
-    buildspec = pipeline.generate_pipeline(project_id, project_config)
-    infra_path = infra_generator.generate_infra(project_id, project_config)
-    repo.commit(project_dir, "Initial commit")
+    if iac_type == 'cloudformation':
+        infra_generator = CloudFormationInfraGenerator()
+        infra_generator.generate_infra(project_id)
 
-    pipeline_name = f"{service_name}-pipeline"
-    repository_name = urlparse(target_info["repo"]).path.strip("/")
-    branch_name = "main"
-    buildspec_location = "buildspec.yaml"
+    else:
+        raise ValueError(f"Unsupported iac_type type: {iac_type}")
 
+    # Create SCM repo
+    logger.info(f"Creating SCM repo type '{scm_type}'...")
+
+    if scm_type == "github":
+        repo = GitHubSourceRepo(scm_info)
+        repo.create_repo()
+        repo.commit(project_dir, "Initial commit")
+    else:
+        raise ValueError(f"Unsupported scm_type type: {scm_type}")
+
+    # Create AWS CodeBuild buildspec file
+    buildspec = JavaMavenBuildspecGenerator()
+    buildspec.generate_buildspec(project_id, service_info)
+
+    # Create AWS CodePipeline
     aws_pipeline = AwsCodePipeline()
-    aws_pipeline.create_pipeline(pipeline_name, repository_name, branch_name, buildspec_location)
+    aws_pipeline.create_pipeline(service_info, scm_info)
 
+    # Write record to DynamoDB
     timestamp = datetime.utcnow().isoformat()
     item = {
         "id": project_id,
-        "project_name": service_name,
+        "project_name": service_info['name'],
         "project_type": project_type,
-        "description": body.get("description", ""),
-        "github_repo": target_info["repo"],
-        "code_pipeline": pipeline_name,
+        "description": service_info("description", ""),
+        "github_repo": scm_info["repo"],
         "created_timestamp": timestamp,
         "updated_timestamp": timestamp,
         "metadata": {
-            "model": model_url,
-            "config": project_config
         }
     }
 
@@ -110,3 +131,74 @@ def get_service(project_id: str):
 @logger.inject_lambda_context
 def lambda_handler(event: dict, context: LambdaContext) -> dict:
     return app.resolve(event, context)
+
+
+if __name__ == "__main__":
+    test_event_post = {
+        "httpMethod": "POST",
+        "body": json.dumps({
+            "service": {
+                "type": "spring",
+                "name": "my-service",
+                "description": "My new service",
+                "openapi": {
+                    "model": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/product-catalog/model/product-catalog.openapi.yaml",
+                    "config": {
+                        "basePackage": "com.amazonaws.example",
+                        "modelPackage": "com.amazonaws.example.model",
+                        "apiPackage": "com.amazonaws.example.api",
+                        "invokerPackage": "com.amazonaws.example.configuration",
+                        "groupId": "com.amazonaws.example",
+                        "artifactId": "cz-order-service"
+                    }
+                }
+            },
+            "scm": {
+                "github": {
+                    "repo": "https://github.com/gchagnon/cz-order-service01a",
+                    "secretKey": "greg-github",
+                    "email": "none@none.com",
+                    "name": "Robot"
+                }
+            },
+            "iac": {
+                "cloudformation": {}
+            }
+        }),
+        "resource": "/services",
+        "path": "/services",
+        "isBase64Encoded": False,
+        "requestContext": {},
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+
+    test_event_get = {
+        "httpMethod": "GET",
+        "resource": "/services/{project_id}",
+        "path": "/services/1234",
+        "pathParameters": {
+            "project_id": "1234"
+        },
+        "isBase64Encoded": False,
+        "requestContext": {},
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+
+    class MockContext():
+        def __init__(self):
+            self.function_name = "local_lambda_test"
+            self.memory_limit_in_mb = 128
+            self.invoked_function_arn = "arn:aws:lambda:us-west-2:123456789012:function:local_lambda_test"
+            self.aws_request_id = str(uuid.uuid4())
+
+    print("Testing POST /services")
+    response_post = lambda_handler(test_event_post, MockContext())
+    print("POST Response:", response_post)
+
+    # print("\nTesting GET /services/{project_id}")
+    # response_get = lambda_handler(test_event_get, MockContext())
+    # print("GET Response:", response_get)

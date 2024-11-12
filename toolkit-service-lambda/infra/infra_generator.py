@@ -1,10 +1,12 @@
 import os
+
 from abc import ABC, abstractmethod
+
 
 class InfraGenerator(ABC):
 
     @abstractmethod
-    def generate_infra(self, project_id: str, config: dict) -> str:
+    def generate_infra(self, project_id: str) -> str:
         pass
 
     def create_infra_dir(self, project_id: str) -> str:

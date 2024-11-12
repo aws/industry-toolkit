@@ -1,15 +1,20 @@
 import boto3
-import os
 import json
+import os
+
+from urllib.parse import urlparse
 from pipeline.pipeline import Pipeline
+
 
 class AwsCodePipeline(Pipeline):
     def __init__(self):
         self.codepipeline_client = boto3.client('codepipeline')
         self.codebuild_client = boto3.client('codebuild')
 
-    def create_pipeline(self, pipeline_name: str, repository_name: str, branch_name: str, buildspec_location: str):
-        unique_artifact_name = "imageDetail.txt"  # Static name; the unique ID will be embedded by CodePipeline
+    def create_pipeline(self, service_info: dict, scm_info: dict):
+        pipeline_name = f"{service_info['name']}-pipeline"
+        repository_name = urlparse(scm_info["repo"]).path.strip("/")
+        branch_name = "main"
 
         build_project = self.codebuild_client.create_project(
             name=f"{pipeline_name}-build",
@@ -121,4 +126,5 @@ class AwsCodePipeline(Pipeline):
         }
 
         response = self.codepipeline_client.create_pipeline(pipeline=pipeline_definition)
+
         return response
