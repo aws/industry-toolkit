@@ -26,7 +26,7 @@ class OpenApiGenAiCodegen(Codegen):
     def generate_project(self, project_id: str, service_info: str):
         service_type = service_info["type"]
 
-        config = service_info["openapi"].get("config", {})
+        config = service_info["openapi-gen"].get("config", {})
 
         app_dir = f"/tmp/{project_id}/app"
         os.makedirs(app_dir, exist_ok=True)
