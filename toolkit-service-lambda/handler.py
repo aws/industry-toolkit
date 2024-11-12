@@ -45,7 +45,7 @@ def post_services():
 
     if "openapi" in service_info:
         codegen = OpenApiCodegen()
-    if "openapi-gen" in service_info:
+    elif "openapi-gen" in service_info:
         codegen = OpenApiGenAiCodegen()
     else:
         raise ValueError(f"Unsupported model type.")
