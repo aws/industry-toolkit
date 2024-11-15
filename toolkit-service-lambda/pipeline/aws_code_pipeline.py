@@ -113,7 +113,7 @@ class AwsCodePipeline(Pipeline):
                                 'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
                                 'ParameterOverrides': json.dumps({
-                                    'ImageUri': '211125507740.dkr.ecr.us-west-2.amazonaws.com/industry-toolkit-ecr-registry:latest'
+                                    'ImageUri.$': "$.BuildOutput.imageUri"
                                 }),
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },

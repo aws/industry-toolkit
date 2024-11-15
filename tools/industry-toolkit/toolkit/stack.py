@@ -31,31 +31,35 @@ class IndustryToolkitStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        # Random suffix for resource names that must be globaly unique, e.g. S3 buckets.
-        random_suffix = str(uuid.uuid4())[:4].lower()
-
         # -------------------------
         # CloudFormation Parameters
         # -------------------------
 
+        suffix_param = CfnParameter(
+            self,
+            "Suffix",
+            type="String",
+            default=str(uuid.uuid4())[:8],
+            description="Unique suffix for resources requiring a globally unique name"
+        )
+
         # Parameter for the CodeArtifact Domain Name
         domain_name_param = CfnParameter(self, "ArtifactsDomainName",
                                          type="String",
-                                         default="industry-toolkitcode-artifact-domain",
+                                         default="industry-toolkit-code-artifact-domain",
                                          description="Name of the CodeArtifact domain."
                                          )
 
         # Parameter for the CodeArtifact Repository Name
         repo_name_param = CfnParameter(self, "ArtifactsRepositoryName",
                                        type="String",
-                                       default="industry-toolkitcode-artifact-repo",
+                                       default="industry-toolkit-code-artifact-repo",
                                        description="Name of the CodeArtifact repository."
                                        )
 
         # Parameter for the artifacts S3 bucket
         artifacts_bucket_name_param = CfnParameter(self, "ArtifactsBucketName",
                                                    type="String",
-                                                   default=f"industry-toolkit-artifacts-bucket-{random_suffix}",
                                                    description="Name of the S3 bucket used to store build artifacts and logs."
                                                    )
 
@@ -86,21 +90,10 @@ class IndustryToolkitStack(Stack):
                                         description="Log group prefix for all Cloudwatch logs."
                                         )
 
-        # Parameter for the Bootstrapper SQS queue name
-        bootstrapper_queue_name_param = CfnParameter(self, "QueueName",
-                                        type="String",
-                                        default="industry-toolkit-bootstrapper-queue",
-                                        description="The name of the SQS queue that API Gateway will send messages to."
-        )
-
-#         vpc_id_param = CfnParameter(self, "VpcId", type="String", description="The ID of an existing VPC to use.")
-
-
-
         # -------------------------
         # Artifact Repositories
         # -------------------------
-
+        bucket_name = artifacts_bucket_name_param.value_as_string or f"industry-toolkit-artifacts-bucket-{str(uuid.uuid4())[:8]}"
         artifacts_bucket = s3.Bucket(self, "ArtifactsBucket",
                                      bucket_name=artifacts_bucket_name_param.value_as_string)
 
@@ -117,37 +110,20 @@ class IndustryToolkitStack(Stack):
             secret_name=secret_name_param.value_as_string
         )
 
-        self.table = dynamodb.Table(
+        services_table = dynamodb.Table(
             self, "ServicesTable",
-            table_name=f"IndustryToolkitServices-{random_suffix}",
+            table_name=f"IndustryToolkitServices-{suffix_param.value_as_string}",
             partition_key=dynamodb.Attribute(
                 name="id",
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
             point_in_time_recovery=True
         )
 
         # -------------------------
         # Bootstrapper Service
         # -------------------------
-        dlq_queue = sqs.Queue(
-                    self, "BootstrapperDLQ",
-                    queue_name=f"{bootstrapper_queue_name_param.value_as_string}-dlq",
-                    retention_period=Duration.days(14)
-        )
-
-        bootstrapper_input_queue = sqs.Queue(
-            self,
-            "BootstrapperServiceQueue",
-            queue_name=bootstrapper_queue_name_param.value_as_string,
-            visibility_timeout=Duration.seconds(300),
-            dead_letter_queue=sqs.DeadLetterQueue(
-                max_receive_count=1,
-                queue=dlq_queue
-            )
-        )
 
         project_codebuild_role = iam.Role(
             self, "ProjectCodeBuildRole",
@@ -199,98 +175,60 @@ class IndustryToolkitStack(Stack):
             resources=["*"]
         ))
 
-#         lambda_function = lambda_.Function(
-#             self, "IndustryToolkitBootstrapperLambda",
-#             runtime=lambda_.Runtime.FROM_IMAGE,
-#             code=lambda_.Code.from_asset_image(
-#                 "toolkit/lambdas/bootstrapper/",
-#                 file="Dockerfile"
-#             ),
-#             handler=lambda_.Handler.FROM_IMAGE,
-#             memory_size=1024,
-#             timeout=Duration.seconds(300),
-#             environment={
-#                 "LOG_LEVEL": bootstrapper_log_level_param.value_as_string,
-#                 "CODEBUILD_ROLE_ARN": project_codebuild_role.role_arn,
-#                 "CODEPIPELINE_ROLE_ARN": codepipeline_role.role_arn,
-#                 "SCM_CREDENTIALS": github_pat_secret.secret_arn,
-#                 "CODEPIPELINE_BUCKET": artifacts_bucket.bucket_name,
-#                 "ECR_REGISTRY_URI": ecr_repository.repository_uri
-#             }
-#         )
-
-#
-
-#         vpc = ec2.Vpc.from_lookup(self, "Vpc", vpc_id=vpc_id_param.value_as_string)
-#
-#         cluster = ecs.Cluster(self, f"IndustryToolkitCluster-{random_suffix}", vpc=vpc)
-#
-#         ecs_task_role = iam.Role(
-#             self, "EcsTaskRole",
-#             assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-#             description="IAM role for the ECS task"
-#         )
-#
-#         ecs_task_role.add_to_policy(iam.PolicyStatement(
-#             actions=[
-#                 "secretsmanager:GetSecretValue",
-#                 "s3:*",
-#                 "logs:*",
-#                 "ecr:*",
-#                 "ecs:*",
-#                 "codebuild:*"],
-#             resources=["*"]
-#         ))
-#
-#         task_definition = ecs.FargateTaskDefinition(
-#             self, "OnDemandTaskDefinition",
-#             memory_limit_mib=1024,
-#             cpu=512,
-#             task_role=ecs_task_role
-#         )
-#
-#         container = task_definition.add_container(
-#             "IndustryToolkitContainer",
-#             image=ecs.ContainerImage.from_registry(ecr_repository.repository_uri),
-#             environment={
-#                 "LOG_LEVEL": bootstrapper_log_level_param.value_as_string,
-#                 "CODEBUILD_ROLE_ARN": project_codebuild_role.role_arn,
-#                 "CODEPIPELINE_ROLE_ARN": codepipeline_role.role_arn,
-#                 "SCM_CREDENTIALS": github_pat_secret.secret_arn,
-#                 "CODEPIPELINE_BUCKET": artifacts_bucket.bucket_name,
-#                 "ECR_REGISTRY_URI": ecr_repository.repository_uri
-#             },
-#             logging=ecs.LogDrivers.aws_logs(stream_prefix="IndustryToolkit")
-#         )
-#
-#         container.add_port_mappings(ecs.PortMapping(container_port=5000))
-#
 
         repo = ecr.Repository.from_repository_arn(
             self, "IndustryToolkitRepo",
             "arn:aws:ecr:us-west-2:211125507740:repository/industry-toolkit/service-lambda-handler"
         )
 
+        image_digest = "sha256:4907758cc94fbbc0c8021cf0e1a7a25faa131d063b0da7f653a1c6dfeb76ec64"
+
         lambda_function_test = lambda_.Function(
             self,
             "MyDockerLambdaFunction",
-            code=lambda_.Code.from_ecr_image(
-                repository=repo,
-                tag="latest-feat-bootsrapper-v2"
-            ),
+            code=lambda_.Code.from_ecr_image(repository=repo, tag_or_digest=image_digest),
             handler=lambda_.Handler.FROM_IMAGE,
             runtime=lambda_.Runtime.FROM_IMAGE,
             memory_size=1024,
-            timeout=Duration.seconds(43),
+            timeout=Duration.seconds(300),
             environment={
                 "LOG_LEVEL": bootstrapper_log_level_param.value_as_string,
                 "CODEBUILD_ROLE_ARN": project_codebuild_role.role_arn,
                 "CODEPIPELINE_ROLE_ARN": codepipeline_role.role_arn,
                 "SCM_CREDENTIALS": github_pat_secret.secret_arn,
                 "CODEPIPELINE_BUCKET": artifacts_bucket.bucket_name,
-                "ECR_REGISTRY_URI": ecr_repository.repository_uri
+                "ECR_REGISTRY_URI": ecr_repository.repository_uri,
+                "SERVICES_TABLE_NAME": services_table.table_name
             },
         )
+
+        services_table.grant_read_write_data(lambda_function_test)
+        github_pat_secret.grant_read(lambda_function_test)
+
+        codebuild_codepipeline_policy = iam.PolicyStatement(
+            actions=[
+                "codebuild:*",
+                "codepipeline:*"
+            ],
+            resources=["*"]
+        )
+
+        lambda_function_test.add_to_role_policy(codebuild_codepipeline_policy)
+
+        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[project_codebuild_role.role_arn]
+        ))
+
+        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[codepipeline_role.role_arn]
+        ))
+
+        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
+            actions=["bedrock:InvokeModel"],
+            resources=["*"]
+        ))
 
         # -------------------------
         # API Gateway
@@ -312,24 +250,6 @@ class IndustryToolkitStack(Stack):
                                                     cloud_watch_role_arn=cloudwatch_logs_role.role_arn
                                                     )
 
-        api_gateway_role = iam.Role(
-            self, "ApiGatewaySQSSendMessageRole",
-            assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
-            inline_policies={
-                "SQSSendMessagePolicy": iam.PolicyDocument(
-                    statements=[
-                        iam.PolicyStatement(
-                            actions=[
-                                "sqs:SendMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl"
-                            ],
-                            resources=[bootstrapper_input_queue.queue_arn]
-                        )
-                    ]
-                )
-            }
-        )
 
         api = apigateway.RestApi(self, "IndustryToolkitApi",
              deploy_options=apigateway.StageOptions(
@@ -369,67 +289,21 @@ class IndustryToolkitStack(Stack):
             }
         )
 
-        service_resource = api.root.add_resource("services")
+        service_resource = api.root.add_resource("{proxy+}")
 
         service_resource.add_method(
-            "POST",
-            apigateway.AwsIntegration(
-                service="sqs",
-                path=f"{self.account}/{bootstrapper_input_queue.queue_name}",
-                integration_http_method="POST",
-                options=apigateway.IntegrationOptions(
-                    credentials_role=api_gateway_role,
-                    request_parameters={
-                        "integration.request.header.Content-Type": "'application/x-www-form-urlencoded'"
-                    },
-                    request_templates={
-                        "application/json": "Action=SendMessage&MessageBody=$util.urlEncode($input.json('$'))"
-                    },
-                    integration_responses=[
-                        {
-                            "statusCode": "202",
-                            "selection_pattern": "2\\d{2}",
-                            "response_templates": {
-                                "application/json": """{
-                                    "status": "Message sent to SQS successfully",
-                                    "messageId": "$input.path('$.SendMessageResponse.SendMessageResult.MessageId')"
-                                }"""
-                            }
-                        },
-                        {
-                            "statusCode": "500",
-                            "selection_pattern": "5\\d{2}",
-                            "response_templates": {
-                                "application/json": """{
-                                    "error": "Internal Server Error"
-                                }"""
-                            }
-                        }
-                    ]
-                )
-            ),
-            method_responses=[
-                {
-                    "statusCode": "202",
-                    "responseModels": {
-                        "application/json": apigateway.Model.EMPTY_MODEL
-                    }
-                },
-                {
-                    "statusCode": "500",
-                    "responseModels": {
-                        "application/json": apigateway.Model.EMPTY_MODEL
-                    }
-                }
-            ]
+            "ANY",
+            apigateway.LambdaIntegration(
+                lambda_function_test,
+                proxy=True
+            )
         )
 
-        bootstrapper_input_queue.add_to_resource_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                principals=[iam.ServicePrincipal("apigateway.amazonaws.com")],
-                actions=["sqs:SendMessage"],
-                resources=[bootstrapper_input_queue.queue_arn]
+        api.root.add_method(
+            "ANY",
+            apigateway.LambdaIntegration(
+                lambda_function_test,
+                proxy=True
             )
         )
 
@@ -437,5 +311,4 @@ class IndustryToolkitStack(Stack):
         CfnOutput(self, "EcrRepositoryUriOutput", value=ecr_repository.repository_uri, description="ECR Repository URI")
         CfnOutput(self, "ApiGatewayUrlOutput", value=api.url, description="API Gateway URL")
         CfnOutput(self, "SecretsManagerSecretArnOutput", value=github_pat_secret.secret_arn, description="Secrets Manager ARN")
-        CfnOutput(self, "BootstrapperQueueUrlOutput", value=bootstrapper_input_queue.queue_url, description="SQS Queue URL")
         CfnOutput(self, "ApiGatewayLogGroupNameOutput", value=api_gateway_log_group.log_group_name, description="API Gateway Log Group")
