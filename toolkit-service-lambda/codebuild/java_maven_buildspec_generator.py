@@ -50,7 +50,10 @@ phases:
 artifacts:
   files:
     - '**/*'
-    - 'imageDetail_*.json'
+  secondary-artifacts:
+    imageDetail:
+      files:
+        - 'imageDetail_*.json'
   base-directory: .
 env:
   variables:

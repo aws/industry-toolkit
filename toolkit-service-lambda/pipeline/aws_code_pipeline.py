@@ -113,11 +113,14 @@ class AwsCodePipeline(Pipeline):
                                 'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
                                 'ParameterOverrides': json.dumps({
-                                    'ImageUri.$': "$.BuildOutput.imageUri"
+                                    'ImageUri.$': '$.imageUri'
                                 }),
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
-                            'inputArtifacts': [{'name': 'BuildOutput'}],
+                            'inputArtifacts': [
+                                {'name': 'BuildOutput'},
+                                {'name': 'imageDetail'}
+                            ],
                             'runOrder': 1
                         }
                     ]
