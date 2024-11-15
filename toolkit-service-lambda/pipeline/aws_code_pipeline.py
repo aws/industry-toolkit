@@ -91,7 +91,10 @@ class AwsCodePipeline(Pipeline):
                                 'ProjectName': build_project['project']['name']
                             },
                             'inputArtifacts': [{'name': 'SourceOutput'}],
-                            'outputArtifacts': [{'name': 'BuildOutput'}],
+                            'outputArtifacts': [
+                              {'name': 'BuildOutput'},
+                              {'name': 'imageDetail'}
+                            ],
                             'runOrder': 1
                         }
                     ]
