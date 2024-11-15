@@ -42,7 +42,10 @@ phases:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
       - cd ..
       - BUILD_INFO="imageDetail_$CODEBUILD_BUILD_ID.json"
-      - echo "{{\\"imageUri\\": \\"$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest\\"}}" > $BUILD_INFO
+      - |
+        echo "{{
+          \\"imageUri\\": \\"$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest\\"
+        }}" > $BUILD_INFO
       - cat $BUILD_INFO
 artifacts:
   files:
