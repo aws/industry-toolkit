@@ -54,6 +54,7 @@ artifacts:
     imageDetail:
       files:
         - 'imageDetail_*.json'
+      name: imageDetail
   base-directory: .
 env:
   variables:
