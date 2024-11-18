@@ -1,6 +1,10 @@
 import boto3
+import os
+
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-from registry import Registry
+
+from docker_registry.registry import Registry
+
 
 class EcrRegistry(Registry):
 
@@ -8,10 +12,9 @@ class EcrRegistry(Registry):
         self.region = os.environ.get("AWS_REGION")
         self.ecr_client = boto3.client("ecr", region_name=self.region)
 
-
     def create_repository(self, repository_name: str):
         try:
-            ecr_client = boto3.client("ecr", region_name=region)
+            ecr_client = boto3.client("ecr", region_name=self.region)
 
             response = ecr_client.create_repository(
                 repositoryName=repository_name

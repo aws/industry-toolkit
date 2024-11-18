@@ -64,7 +64,7 @@ def post_services():
     else:
         raise ValueError(f"Unsupported project type: {project_type}")
 
-    # Create container registry
+    # Create container docker_registry
     registry = EcrRegistry()
     registry.create_repository(service_info["name"])
 
