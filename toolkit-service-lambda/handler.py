@@ -65,8 +65,11 @@ def post_services():
         raise ValueError(f"Unsupported project type: {project_type}")
 
     # Create container docker_registry
+    registry_name = service_info["name"]
+    logger.info(f"Creating ECR Registry named {registry_name}")
+
     registry = EcrRegistry()
-    registry.create_repository(service_info["name"])
+    registry.create_repository(registry_name)
 
     # Generate IaC code
     logger.info(f"Creating IaC code for {iac_type}...")
