@@ -57,11 +57,16 @@ artifacts:
   files:
     - '**/*'
   secondary-artifacts:
+    BuildOutput:
+      files:
+        - '**/*'
+      name: BuildOutput
     imageDetail:
       files:
         - 'imageDetail_*.json'
       name: imageDetail
-  base-directory: .
+base-directory: .
+
 env:
   variables:
     ECR_REPOSITORY_NAME: {ecr_repository_name}
