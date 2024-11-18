@@ -12,6 +12,7 @@ from codebuild.java_maven_buildspec_generator import JavaMavenBuildspecGenerator
 from codegen.open_api_codegen import OpenApiCodegen
 from codegen.open_api_genai_codegen import OpenApiGenAiCodegen
 from docker.java_spring_boot_generator import JavaSpringBootDockerfileGenerator
+from docker_registry.ecr_registry import EcrRegistry
 from infra.cloudformation_infra_generator import CloudFormationInfraGenerator
 from pipeline.aws_code_pipeline import AwsCodePipeline
 from source_repo.github_source_repo import GitHubSourceRepo
@@ -62,6 +63,10 @@ def post_services():
         generator.generate_dockerfile(project_id)
     else:
         raise ValueError(f"Unsupported project type: {project_type}")
+
+    # Create container registry
+    registry = EcrRegistry()
+    registry.create_repository(service_info["name"])
 
     # Generate IaC code
     logger.info(f"Creating IaC code for {iac_type}...")

@@ -9,16 +9,22 @@ class JavaMavenBuildspecGenerator(BuildspecGenerator):
     def generate_buildspec(self, project_id: str, service_info: dict) -> str:
         project_dir = self.create_project_dir(project_id)
 
-        return self.write_buildspec(project_dir)
+        sts_client = boto3.client("sts")
 
-    def write_buildspec(self, project_dir: str):
+        identity = sts_client.get_caller_identity()
+        account_id = identity["Account"]
+
+        return self.write_buildspec(project_dir, service_info["name"], account_id)
+
+    def write_buildspec(self, project_dir: str, project_name:str, account_id: str):
         buildspec_path = os.path.join(project_dir, "buildspec.yaml")
 
         print(f"Writing buildspec.yaml to {buildspec_path}")
 
-        ecr_path = os.getenv("ECR_REGISTRY_URI")
-        ecr_registry_uri, ecr_repository_name = ecr_path.split("/", 1)
-        aws_default_region = boto3.session.Session().region_name
+        region = boto3.session.Session().region_name
+
+        ecr_registry_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com/"
+        ecr_repository_name = project_name
 
         buildspec_content = f"""
 version: 0.2
@@ -60,7 +66,7 @@ env:
   variables:
     ECR_REPOSITORY_NAME: {ecr_repository_name}
     ECR_REGISTRY_URI: {ecr_registry_uri}
-    AWS_DEFAULT_REGION: {aws_default_region}
+    AWS_DEFAULT_REGION: {region}
 """
         try:
             with open(buildspec_path, 'w') as f:
