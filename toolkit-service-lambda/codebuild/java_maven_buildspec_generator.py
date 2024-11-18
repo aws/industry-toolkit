@@ -23,7 +23,7 @@ class JavaMavenBuildspecGenerator(BuildspecGenerator):
 
         region = boto3.session.Session().region_name
 
-        ecr_registry_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com/"
+        ecr_registry_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com"
         ecr_repository_name = project_name
 
         buildspec_content = f"""
