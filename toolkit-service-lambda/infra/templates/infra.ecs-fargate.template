@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: ECS Fargate Service with CloudWatch logging and Network Load Balancer
 
 Parameters:
-  ImageUri:
+  imageUri:
     Type: String
     Description: URI of the ECR image to deploy
 

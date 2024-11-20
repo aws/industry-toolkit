@@ -27,11 +27,10 @@ class CloudFormationInfraGenerator(InfraGenerator):
     def write_config(self, params, filename='dev.json'):
         cfn_params = {
             "Parameters": {
-                "ImageUri": "PLACEHOLDER_URI"
+                "imageUri": "PLACEHOLDER_URI"
             }
         }
 
-        # Add all other parameters
         cfn_params["Parameters"].update(params)
 
         try:
