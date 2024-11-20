@@ -50,7 +50,7 @@ phases:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo Updating CloudFormation parameters file...
-      - sed -i 's|PLACEHOLDER_URI|'${{ECR_REPOSITORY_URI}}:${{CODEBUILD_RESOLVED_SOURCE_VERSION}}'|' infra/dev.json
+      - sed -i 's|PLACEHOLDER_URI|'${{ECR_REPOSITORY_URI}}/${{ECR_REPOSITORY_NAME}}:latest'|' infra/dev.json
       - cat infra/dev.json
 artifacts:
   files:

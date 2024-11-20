@@ -75,7 +75,7 @@ Resources:
     Properties:
       Type: network
       Scheme: internal
-      Subnets: !Ref PrivateSubnets
+      Subnets: !Ref subnets
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -105,7 +105,7 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          Subnets: !Ref PrivateSubnets
+          Subnets: !Ref subnets
           AssignPublicIp: DISABLED
       LoadBalancers:
         - ContainerName: !Sub "${AWS::StackName}-container"
@@ -125,6 +125,6 @@ Outputs:
     Description: "Network Load Balancer DNS Name"
     Value: !GetAtt NetworkLoadBalancer.DNSName
 
-  SelectedSubnets:
-    Description: "Selected Private Subnets"
-    Value: !Join [",", !Ref PrivateSubnets]
+  Subnets:
+    Description: " Subnets"
+    Value: !Join [",", !Ref subnets]
