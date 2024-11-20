@@ -113,7 +113,6 @@ class AwsCodePipeline(Pipeline):
                             'configuration': {
                                 'ActionMode': 'CREATE_UPDATE',
                                 'StackName': f"{pipeline_name}-stack",
-                                'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
                                 'TemplatePath': 'BuildOutput::infra.yaml',
                                 'TemplateConfiguration': 'BuildOutput::dev.json',

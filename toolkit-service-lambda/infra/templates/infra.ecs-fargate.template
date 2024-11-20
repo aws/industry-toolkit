@@ -6,11 +6,11 @@ Parameters:
     Type: String
     Description: URI of the ECR image to deploy
 
-  VPCId:
+  vpc:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID where ECS will be deployed
 
-  PrivateSubnets:
+  subnets:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of private subnet IDs for the ECS tasks and NLB (specify at least two)
 
