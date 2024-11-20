@@ -116,7 +116,7 @@ class AwsCodePipeline(Pipeline):
                                 'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
                                 'ParameterOverrides': json.dumps({
-                                    'ImageTag': {
+                                    'ImageUri': {
                                         'Fn::GetParam': ['imageDetail', 'imageDetail.json', 'imageUri']
                                     }
                                 }),
