@@ -83,7 +83,7 @@ Resources:
       TargetType: ip
       Port: 80
       Protocol: TCP
-      VpcId: !Ref VPCId
+      VpcId: !Ref vpc
 
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
