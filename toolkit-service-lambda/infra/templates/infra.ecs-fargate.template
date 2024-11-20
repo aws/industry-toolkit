@@ -60,7 +60,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Sub "${AWS::StackName}-container"
-          Image: !Ref ImageUri
+          Image: !Ref imageUri
           PortMappings:
             - ContainerPort: 80
           LogConfiguration:
