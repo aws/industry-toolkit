@@ -116,8 +116,10 @@ class AwsCodePipeline(Pipeline):
                                 'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
                                 'ParameterOverrides': json.dumps({
-                                    'ImageUri.$': '#{imageDetail.imageUri}'
-                                }),
+                                    'ImageTag': {
+                                        'Fn::GetParam': ['imageDetail', 'imageDetail.json', 'imageUri']
+                                    }
+                                })
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
                             'inputArtifacts': [
