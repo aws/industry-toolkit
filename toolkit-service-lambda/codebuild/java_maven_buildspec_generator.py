@@ -42,18 +42,17 @@ phases:
       - cd app
       - mvn clean install
       - docker build -t $ECR_REPOSITORY_NAME:latest -f Dockerfile .
-      - docker tag $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest $ECR_REPOSITORY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - docker tag $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
   post_build:
     commands:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
-      - docker push $ECR_REPOSITORY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo Updating CloudFormation parameters file...
-      - sed -i 's|PLACEHOLDER_URI|'${{ECR_REPOSITORY_URI}}:${{CODEBUILD_RESOLVED_SOURCE_VERSION}}'|' dev.json
-      - cat dev.json
+      - sed -i 's|PLACEHOLDER_URI|'${{ECR_REPOSITORY_URI}}:${{CODEBUILD_RESOLVED_SOURCE_VERSION}}'|' infra/dev.json
+      - cat infra/dev.json
 artifacts:
   files:
-    - dev.json
-    - infra.yaml
+    - infra/dev.json
+    - infra/infra.yaml
 base-directory: .
 
 env:
