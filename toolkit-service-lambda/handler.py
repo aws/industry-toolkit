@@ -76,7 +76,7 @@ def post_services():
 
     if iac_type == 'cloudformation':
         infra_generator = CloudFormationInfraGenerator()
-        infra_generator.generate_infra(project_id)
+        infra_generator.generate_infra(project_id, iac_info)
 
     else:
         raise ValueError(f"Unsupported iac_type type: {iac_type}")
