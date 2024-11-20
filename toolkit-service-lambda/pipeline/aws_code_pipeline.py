@@ -93,7 +93,6 @@ class AwsCodePipeline(Pipeline):
                             'inputArtifacts': [{'name': 'SourceOutput'}],
                             'outputArtifacts': [
                               {'name': 'BuildOutput'},
-                              {'name': 'imageDetail'}
                             ],
                             'runOrder': 1
                         }
