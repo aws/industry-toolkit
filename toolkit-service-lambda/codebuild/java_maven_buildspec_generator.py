@@ -44,6 +44,7 @@ phases:
       - docker build -t $ECR_REPOSITORY_NAME:latest -f Dockerfile .
       - docker tag $ECR_REPOSITORY_NAME:latest $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
       - docker tag $ECR_REPOSITORY_NAME:latest $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  post_build:  
     commands:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
