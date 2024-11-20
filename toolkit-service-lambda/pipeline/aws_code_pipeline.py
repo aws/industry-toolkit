@@ -119,7 +119,7 @@ class AwsCodePipeline(Pipeline):
                                     'ImageTag': {
                                         'Fn::GetParam': ['imageDetail', 'imageDetail.json', 'imageUri']
                                     }
-                                })
+                                }),
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
                             'inputArtifacts': [
