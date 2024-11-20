@@ -115,11 +115,8 @@ class AwsCodePipeline(Pipeline):
                                 'StackName': f"{pipeline_name}-stack",
                                 'TemplatePath': 'BuildOutput::infra/infra.yaml',
                                 'Capabilities': 'CAPABILITY_IAM',
-                                'ParameterOverrides': json.dumps({
-                                    'ImageUri': {
-                                        'Fn::GetParam': ['imageDetail', 'imageDetail.json', 'imageUri']
-                                    }
-                                }),
+                                'TemplatePath': 'BuildOutput::infra.yaml',
+                                'TemplateConfiguration': 'BuildOutput::dev.json',
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
                             'inputArtifacts': [

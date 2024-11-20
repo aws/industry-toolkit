@@ -46,25 +46,14 @@ phases:
   post_build:
     commands:
       - docker push $ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest
-      - cd ..
-      - BUILD_INFO="imageDetail.json"
-      - |
-        echo "{{
-          \\"imageUri\\": \\"$ECR_REGISTRY_URI/$ECR_REPOSITORY_NAME:latest\\"
-        }}" > $BUILD_INFO
-      - cat $BUILD_INFO
+      - docker push $ECR_REPOSITORY_URI/$ECR_REPOSITORY_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo Updating CloudFormation parameters file...
+      - sed -i 's|PLACEHOLDER_URI|'${{ECR_REPOSITORY_URI}}:${{CODEBUILD_RESOLVED_SOURCE_VERSION}}'|' dev.json
+      - cat dev.json
 artifacts:
   files:
-    - '**/*'
-  secondary-artifacts:
-    BuildOutput:
-      files:
-        - '**/*'
-      name: BuildOutput
-    imageDetail:
-      files:
-        - 'imageDetail.json'
-      name: imageDetail
+    - dev.json
+    - infra.yaml
 base-directory: .
 
 env:
