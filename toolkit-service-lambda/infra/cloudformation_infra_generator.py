@@ -8,12 +8,13 @@ import shutil
 class CloudFormationInfraGenerator(InfraGenerator):
 
     def generate_infra(self, project_id: str, infra_config: dict) -> str:
-        project_dir = self.create_infra_dir(project_id)
+        infra_dir = self.create_infra_dir(project_id)
 
         # Create config file dev.json
-        self.write_config(infra_config, "dev.json")
+        config_path = os.path.join(infra_dir, "dev.json")
+        self.write_config(infra_config, config_path)
 
-        return self.copy_cloudformation_template(project_dir)
+        return self.copy_cloudformation_template(infra_dir)
 
     def copy_cloudformation_template(self, project_dir: str) -> str:
         module_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +25,7 @@ class CloudFormationInfraGenerator(InfraGenerator):
 
         return destination_template_path
 
-    def write_config(self, params, filename='dev.json'):
+    def write_config(self, params, filename):
         cfn_params = {
             "Parameters": {
                 "imageUri": "PLACEHOLDER_URI"
