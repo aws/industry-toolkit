@@ -113,8 +113,8 @@ class AwsCodePipeline(Pipeline):
                                 'ActionMode': 'CREATE_UPDATE',
                                 'StackName': f"{pipeline_name}-stack",
                                 'Capabilities': 'CAPABILITY_IAM',
-                                'TemplatePath': 'BuildOutput::infra.yaml',
-                                'TemplateConfiguration': 'BuildOutput::dev.json',
+                                'TemplatePath': 'BuildOutput::infra/infra.yaml',
+                                'TemplateConfiguration': 'BuildOutput::infra/dev.json',
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
                             'inputArtifacts': [
