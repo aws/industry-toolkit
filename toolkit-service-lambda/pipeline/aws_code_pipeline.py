@@ -120,8 +120,7 @@ class AwsCodePipeline(Pipeline):
                                 'RoleArn': os.environ['CODEPIPELINE_ROLE_ARN']
                             },
                             'inputArtifacts': [
-                                {'name': 'BuildOutput'},
-                                {'name': 'imageDetail'}
+                                {'name': 'BuildOutput'}
                             ],
                             'runOrder': 1
                         }
