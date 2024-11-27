@@ -10,6 +10,8 @@ env/
 **/env/
 **/.env/
 
+**/__pycache__/
+
 # Yarn
 .yarn/*
 !.yarn/cache
