@@ -1,25 +1,7 @@
 import subprocess
-import requests
 import os
 
 from codegen.codegen import Codegen
-
-# "service": {
-#   "type": "spring",
-#   "name": "my-service",
-#   "description": "My new service",
-#   "openapi": {
-#     "model": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/product-catalog/model/product-catalog.openapi.yaml",
-#     "config": {
-#       "basePackage": "com.amazonaws.example",
-#       "modelPackage": "com.amazonaws.example.model",
-#       "apiPackage": "com.amazonaws.example.api",
-#       "invokerPackage": "com.amazonaws.example.configuration",
-#       "groupId": "com.amazonaws.example",
-#       "artifactId": "cz-order-service"
-#     }
-#   }
-# }
 
 
 class OpenApiCodegen(Codegen):
@@ -36,18 +18,6 @@ class OpenApiCodegen(Codegen):
         os.makedirs(model_dir, exist_ok=True)
 
         model_filename = os.path.basename(model_location)
-        # model_local_path = os.path.join(model_dir, model_filename)
-
-        # try:
-        #     response = requests.get(model_location)
-        #     response.raise_for_status()
-        #
-        #     with open(model_local_path, "wb") as file:
-        #         file.write(response.content)
-        #     print(f"Model downloaded successfully to {model_local_path}")
-        # except requests.RequestException as e:
-        #     print(f"Failed to download model: {e}")
-        #     raise RuntimeError(f"Error downloading model: {e}")
 
         command = [
             "java",
