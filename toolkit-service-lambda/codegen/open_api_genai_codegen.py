@@ -63,7 +63,8 @@ class OpenApiGenAiCodegen(Codegen):
     def generate_model_with_bedrock(self, prompt: str, output_path: str):
         client = boto3.client("bedrock-runtime")
 
-        formatted_prompt = f"Human: {prompt}\nAssistant:"
+        additional_prompt = "The service should be defined in OpenAPI using YAML format."
+        formatted_prompt = f"Human: {prompt} {additional_prompt}\nAssistant:"
 
         response = client.invoke_model(
             modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
