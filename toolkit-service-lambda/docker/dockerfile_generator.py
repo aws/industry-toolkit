@@ -1,11 +1,12 @@
 import os
-import uuid
+
 from abc import ABC, abstractmethod
+
 
 class DockerfileGenerator(ABC):
 
     @abstractmethod
-    def generate_dockerfile(self, project_id: str, project_config: dict) -> str:
+    def generate_dockerfile(self, project_id: str) -> str:
         pass
 
     def write_dockerfile(self, project_id, dockerfile_content: str):

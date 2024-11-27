@@ -1,9 +1,0 @@
-/build/
-/.gradle/
-/out/
-/.idea/
-/*.iml
-*.jar
-*.war
-*.class
-.DS_Store

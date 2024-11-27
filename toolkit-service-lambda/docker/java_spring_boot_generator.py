@@ -1,10 +1,11 @@
 from docker.dockerfile_generator import DockerfileGenerator
 
+
 class JavaSpringBootDockerfileGenerator(DockerfileGenerator):
 
-    def generate_dockerfile(self, project_id: str, project_config: dict) -> str:
-        base_image = project_config.get('base_image', 'public.ecr.aws/amazonlinux/amazonlinux:latest')
-        jar_file = project_config.get('jar_file', 'app.jar')
+    def generate_dockerfile(self, project_id: str) -> str:
+        base_image = 'public.ecr.aws/amazonlinux/amazonlinux:latest'
+        jar_file = 'app.jar'
 
         dockerfile_content = f"""
 FROM {base_image}
