@@ -181,7 +181,7 @@ class IndustryToolkitStack(Stack):
             "arn:aws:ecr:us-west-2:211125507740:repository/industry-toolkit/service-lambda-handler"
         )
 
-        image_digest = "sha256:4907758cc94fbbc0c8021cf0e1a7a25faa131d063b0da7f653a1c6dfeb76ec64"
+        image_digest = "sha256:961236955a02746e656e8ead92a89f4315db95c91376cdc1d57f55cd89fc2939"
 
         lambda_function_test = lambda_.Function(
             self,
@@ -225,90 +225,15 @@ class IndustryToolkitStack(Stack):
             resources=[codepipeline_role.role_arn]
         ))
 
-        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel"],
-            resources=["*"]
-        ))
-
-        # -------------------------
-        # API Gateway
-        # -------------------------
-
-        api_gateway_log_group = logs.LogGroup(self, "ApiGatewayAccessLogs",
-                                  log_group_name=log_group_name_param.value_as_string + 'apigateway',
-                                  removal_policy=RemovalPolicy.DESTROY)
-
-        cloudwatch_logs_role = iam.Role(self, "ApiGatewayCloudWatchRole",
-                                        assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
-                                        managed_policies=[
-                                            iam.ManagedPolicy.from_aws_managed_policy_name(
-                                                "service-role/AmazonAPIGatewayPushToCloudWatchLogs")
-                                        ]
-                                        )
-
-        api_gateway_account = apigateway.CfnAccount(self, "ApiGatewayAccount",
-                                                    cloud_watch_role_arn=cloudwatch_logs_role.role_arn
-                                                    )
-
-
-        api = apigateway.RestApi(self, "IndustryToolkitApi",
-             deploy_options=apigateway.StageOptions(
-                 logging_level=apigateway.MethodLoggingLevel.INFO,
-                 data_trace_enabled=True,
-                 metrics_enabled=True,
-                 access_log_destination=apigateway.LogGroupLogDestination(api_gateway_log_group),
-                 access_log_format=apigateway.AccessLogFormat.json_with_standard_fields(
-                     caller=True,
-                     http_method=True,
-                     ip=True,
-                     protocol=True,
-                     request_time=True,
-                     resource_path=True,
-                     response_length=True,
-                     status=True,
-                     user=True
-                 )
-             )
-             )
-
-
-        request_model = api.add_model(
-            "RequestModel",
-            content_type="application/json",
-            schema={
-                "type": apigateway.JsonSchemaType.OBJECT,
-                "properties": {
-                    "serviceName": {"type": apigateway.JsonSchemaType.STRING},
-                    "serviceType": {"type": apigateway.JsonSchemaType.STRING},
-                    "description": {"type": apigateway.JsonSchemaType.STRING},
-                    "model": {"type": apigateway.JsonSchemaType.STRING},
-                    "config": {"type": apigateway.JsonSchemaType.OBJECT, "additionalProperties": True},
-                    "target": {"type": apigateway.JsonSchemaType.OBJECT, "additionalProperties": True}
-                },
-                "required": ["serviceName", "serviceType", "description", "model", "target"]
-            }
-        )
-
-        service_resource = api.root.add_resource("{proxy+}")
-
-        service_resource.add_method(
-            "ANY",
-            apigateway.LambdaIntegration(
-                lambda_function_test,
-                proxy=True
-            )
-        )
-
-        api.root.add_method(
-            "ANY",
-            apigateway.LambdaIntegration(
-                lambda_function_test,
-                proxy=True
+        lambda_function_test.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel"],
+                resources=[
+                    "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"
+                ]
             )
         )
 
         CfnOutput(self, "ArtifactsBucketNameOutput", value=artifacts_bucket.bucket_name, description="Artifacts S3 Bucket Name")
         CfnOutput(self, "EcrRepositoryUriOutput", value=ecr_repository.repository_uri, description="ECR Repository URI")
-        CfnOutput(self, "ApiGatewayUrlOutput", value=api.url, description="API Gateway URL")
         CfnOutput(self, "SecretsManagerSecretArnOutput", value=github_pat_secret.secret_arn, description="Secrets Manager ARN")
-        CfnOutput(self, "ApiGatewayLogGroupNameOutput", value=api_gateway_log_group.log_group_name, description="API Gateway Log Group")

@@ -79,6 +79,7 @@ class OpenApiGenAiCodegen(Codegen):
         )
 
         model_response = json.loads(response["body"].read())
+        print(model_response)
         response_text = model_response["content"][0]["text"]
 
         split_text = response_text.split('```yaml', 1)
