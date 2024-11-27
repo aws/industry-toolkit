@@ -34,7 +34,6 @@ class IndustryToolkitStack(Stack):
         # -------------------------
         # CloudFormation Parameters
         # -------------------------
-
         suffix_param = CfnParameter(
             self,
             "Suffix",
@@ -170,7 +169,8 @@ class IndustryToolkitStack(Stack):
                 "iam:*",
                 "iam:DeleteRolePolicy",
                 "iam:DeleteRole",
-                "iam:CreateRole"
+                "iam:CreateRole",
+                "elasticloadbalancing:*"
             ],
             resources=["*"]
         ))
@@ -181,11 +181,11 @@ class IndustryToolkitStack(Stack):
             "arn:aws:ecr:us-west-2:211125507740:repository/industry-toolkit/service-lambda-handler"
         )
 
-        image_digest = "sha256:f14d8e0072d8411cfdc0c7ca6df12badf76bdaed74478174f7d409ae387cb33e"
+        image_digest = "sha256:7e84cdfd92dc432c371212739727a9cfd9ef7fdb8d6aee09ee7280f6e9e36695"
 
-        lambda_function_test = lambda_.Function(
+        bootstrapper_lambda_function = lambda_.Function(
             self,
-            "MyDockerLambdaFunction",
+            "industry-toolkit-bootstrapper",
             code=lambda_.Code.from_ecr_image(repository=repo, tag_or_digest=image_digest),
             handler=lambda_.Handler.FROM_IMAGE,
             runtime=lambda_.Runtime.FROM_IMAGE,
@@ -202,8 +202,8 @@ class IndustryToolkitStack(Stack):
             },
         )
 
-        services_table.grant_read_write_data(lambda_function_test)
-        github_pat_secret.grant_read(lambda_function_test)
+        services_table.grant_read_write_data(bootstrapper_lambda_function)
+        github_pat_secret.grant_read(bootstrapper_lambda_function)
 
         codebuild_codepipeline_policy = iam.PolicyStatement(
             actions=[
@@ -213,19 +213,24 @@ class IndustryToolkitStack(Stack):
             resources=["*"]
         )
 
-        lambda_function_test.add_to_role_policy(codebuild_codepipeline_policy)
+        bootstrapper_lambda_function.add_to_role_policy(codebuild_codepipeline_policy)
 
-        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
+        bootstrapper_lambda_function.add_to_role_policy(iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=[project_codebuild_role.role_arn]
         ))
 
-        lambda_function_test.add_to_role_policy(iam.PolicyStatement(
+        bootstrapper_lambda_function.add_to_role_policy(iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=[codepipeline_role.role_arn]
         ))
 
-        lambda_function_test.add_to_role_policy(
+        bootstrapper_lambda_function.add_to_role_policy(iam.PolicyStatement(
+            actions=["ecr:*"],
+            resources=["*"]
+        ))
+
+        bootstrapper_lambda_function.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["bedrock:InvokeModel"],
                 resources=[
@@ -237,3 +242,4 @@ class IndustryToolkitStack(Stack):
         CfnOutput(self, "ArtifactsBucketNameOutput", value=artifacts_bucket.bucket_name, description="Artifacts S3 Bucket Name")
         CfnOutput(self, "EcrRepositoryUriOutput", value=ecr_repository.repository_uri, description="ECR Repository URI")
         CfnOutput(self, "SecretsManagerSecretArnOutput", value=github_pat_secret.secret_arn, description="Secrets Manager ARN")
+        CfnOutput(self, "BootstraperLambdaName", value=bootstrapper_lambda_function.function_name, description="Project Bootstrap Lambda Name")
