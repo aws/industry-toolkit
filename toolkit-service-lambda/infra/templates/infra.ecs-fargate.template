@@ -1,20 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Fargate Service with CloudWatch logging (no ALB)
+Description: ECS Fargate Service with CloudWatch logging and Network Load Balancer
 
 Parameters:
-  ImageUri:
+  imageUri:
     Type: String
     Description: URI of the ECR image to deploy
 
-  VPCId:
+  vpc:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID where ECS will be deployed
-    Default: 'vpc-02d8748bde564309a'
 
-  Subnets:
+  subnets:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: List of subnet IDs for the ECS tasks
-    Default: "subnet-065549c18ca451b3e,subnet-0ff3709a449dc17a5,subnet-02ae02aab269cdb86"
+    Description: List of private subnet IDs for the ECS tasks and NLB (specify at least two)
 
 Resources:
   ECSLogGroup:
@@ -62,7 +60,7 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: !Sub "${AWS::StackName}-container"
-          Image: !Ref ImageUri
+          Image: !Ref imageUri
           PortMappings:
             - ContainerPort: 80
           LogConfiguration:
@@ -72,8 +70,34 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
 
+  NetworkLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: network
+      Scheme: internal
+      Subnets: !Ref subnets
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: ip
+      Port: 80
+      Protocol: TCP
+      VpcId: !Ref vpc
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref NetworkLoadBalancer
+      Port: 80
+      Protocol: TCP
+
   ECSService:
     Type: AWS::ECS::Service
+    DependsOn: Listener
     Properties:
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref TaskDefinition
@@ -81,8 +105,48 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          Subnets: !Ref Subnets
-          AssignPublicIp: ENABLED
+          Subnets: !Ref subnets
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: !Sub "${AWS::StackName}-container"
+          ContainerPort: 80
+          TargetGroupArn: !Ref TargetGroup
+
+  ECSTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !Ref vpc
+      SecurityGroupIngress:
+        - Description: Allow traffic from NLB
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+          SourceSecurityGroupId: !Ref NLBSecurityGroup
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+  NLBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Network Load Balancer
+      VpcId: !Ref vpc
+      SecurityGroupIngress:
+        - Description: Allow inbound traffic on port 80
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
 
 Outputs:
   ECSClusterName:
@@ -92,3 +156,11 @@ Outputs:
   ECSServiceName:
     Description: "ECS Service Name"
     Value: !Ref ECSService
+
+  NetworkLoadBalancerDNS:
+    Description: "Network Load Balancer DNS Name"
+    Value: !GetAtt NetworkLoadBalancer.DNSName
+
+  Subnets:
+    Description: " Subnets"
+    Value: !Join [",", !Ref subnets]

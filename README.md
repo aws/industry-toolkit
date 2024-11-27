@@ -13,6 +13,7 @@ The Industry Toolkit is installed as a CDK script. Before we get started, you'll
 
 - AWS Credentials
 - Github account and a [PAT created](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+- Networking set up in your account that allows ECS tasks in a private subnet to reach ECR
 
 ```bash
    # Clone this repository
@@ -29,49 +30,74 @@ The Industry Toolkit is installed as a CDK script. Before we get started, you'll
    cdk deploy
 ```
 
-Make note of the endpoint URI and the secrets ARN from the output; you'll need them in the next steps.
+Make note of the Lambda function name and the secrets ARN from the output; you'll need them in the next steps.
 
 ```bash
 IndustryToolkitStack.CredentialsSecretArn = arn:aws:secretsmanager:<region>:<account>:secret:IndustryToolkitCredentials
-IndustryToolkitStack.IndustryToolkitApiEndpoint = https://<endpoint>.execute-api.<region>.amazonaws.com/prod/
+IndustryToolkitStack.BootstraperLambdaName = IndustryToolkitStack-industrytoolkitbootstrapper-324234323
 
 ```
 
 ### Set your Github credentials
 Create a Github PAT and store that as a key/value pair in the Secrets Manager secret that was created above. The key should be an identifier for the PAT and the value is the PAT itself:
 ```json
-{"my-key": "gh_adfa68a7sdf6adsfas8"}
+{"my-key": "<my-github-pat>"}
 ```
 
-### Creating your first Service
+### Creating your First Service
 Let's create a simple Spring Boot service that implements a [Shopping Cart API](https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/cart/model/cart.openapi.yaml).
 
-```bash
-curl -X POST <my-endpoint>/services \
-     -H "Content-Type: application/json" \
-     -d '{
-   "serviceName": "my-first-java-service",
-   "serviceType": "spring",
-   "description": "Tutorial",
-   "model": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/cart/model/cart.openapi.yaml",
-   "config": {
-     "basePackage": "com.myorg",
-     "modelPackage": "com.myorg.model",
-     "apiPackage": "com.myorg.api",
-     "invokerPackage": "com.myorg.configuration",
-     "groupId": "com.myorg",
-     "artifactId": "cart"
-   },
-   "target": {
-     "org": "<github-org>",
-     "secretKey": "<my-key>",
-     "email": "none@none.com",
-     "name": "Robot"
-   }
-  }'
+Create a service definition file (service.json):
+```bash service.json
+{
+  "service": {
+    "type": "spring",
+    "name": "my-shopping-cart",
+    "description": "Shopping Cart service",
+    "openapi": {
+      "model": "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/cart/model/cart.openapi.yaml",
+      "config": {
+        "basePackage": "com.myorg.example",
+        "modelPackage": "com.myorg.example.model",
+        "apiPackage": "com.myorg.example.api",
+        "invokerPackage": "com.myorg.example.configuration",
+        "groupId": "com.myorg.example",
+        "artifactId": "my-shopping-cart"
+      }
+    }
+  },
+  "scm": {
+    "github": {
+      "repo": "<github-repo-uri>",
+      "secretKey": "my-key",
+      "email": "none@none.com",
+      "name": "Robot"
+    }
+  },
+  "iac": {
+    "cloudformation": {
+      "vpc": "<my-vpc-id>",
+      "subnets": "<my-subnet-id-1>,<my-subnet-id-2>,..."
+    }
+  }
+}
 ```
 
-You will receive a `202` status code and will see a project created in your Github org shortly. To check the status you can look at the CodeBuild task that was created.
+Then execute the Service Bootstrapper Lambda:
+
+```bash
+aws lambda invoke \                                                                                                                           2.9m  Wed Nov 27 14:25:35 2024
+      --function-name IndustryToolkitStack-industrytoolkitbootstrapper2C-jzOCXOQaQvbx  \
+      --payload file://sservice.json \
+      --cli-binary-format raw-in-base64-out \
+      /dev/stdout
+```
+
+When this completes, you will have:
+* A GitHub repo with your service code in it
+* A CloudFormation script that will deploy your code as an ECS Fargate service
+* An ECR Repository for your container images
+* A CodePipeline that will fetch your source, compile/test/containerize, and deploy
 
 For more in-depth documentation, visit our [Getting Started guide](https://github.com/aws/industry-toolkit/wiki/01:-Getting-Started).
 
