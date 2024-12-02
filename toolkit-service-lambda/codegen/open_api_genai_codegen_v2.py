@@ -115,19 +115,7 @@ class OpenApiGenAiCodegenV2(Codegen):
     def generate_source_file(self, prompt: str, file_path: str, model_id: str = "anthropic.claude-3-5"):
         bedrock = boto3.client('bedrock-runtime')
 
-        messages = [
-            {"role": "system", "content": "You are an expert code generator."},
-            {"role": "user", "content": prompt}
-        ]
-
         formatted_prompt = f'Human: {prompt}\n\nAssistant:'
-
-        body = json.dumps({
-            "messages": messages,
-            "max_tokens_to_sample": 1024,
-            "temperature": 0.7,
-            "top_p": 0.9
-        })
 
         response = bedrock.invoke_model(
             modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
