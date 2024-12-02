@@ -137,10 +137,12 @@ def lambda_handler(event, context):
 
     except Exception as e:
         logger.error(f"Error processing service creation: {e}")
+        logger.error("Traceback:", exc_info=True)
         return {
             "statusCode": 500,
             "body": json.dumps({"message": "An error occurred while processing the service creation."}),
         }
+
 
 def main():
     """Main function for local testing."""

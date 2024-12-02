@@ -50,6 +50,8 @@ class OpenApiGenAiCodegenV2(Codegen):
 
         self.implement_interface(self, f"{app_dir}/src/main/java/com/amazonaws/example/api/CustomersApi.java")
 
+        print(f"Project generated successfully at {app_dir}")
+
     def implement_interface(self, interface_path: str):
         interface_name = os.path.basename(interface_path).replace(".java", "")
         directory = os.path.dirname(interface_path)
