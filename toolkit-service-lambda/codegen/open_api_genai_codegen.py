@@ -93,4 +93,3 @@ class OpenApiGenAiCodegen(Codegen):
         with open(output_path, "w") as model_file:
             model_file.write(generated_content)
         print(f"Generated model saved to {output_path}")
-        print(generated_content)
