@@ -8,6 +8,7 @@ from aws_lambda_powertools.logging import Logger
 from codebuild.java_maven_buildspec_generator import JavaMavenBuildspecGenerator
 from codegen.open_api_codegen import OpenApiCodegen
 from codegen.open_api_genai_codegen import OpenApiGenAiCodegen
+from codegen.open_api_genai_codegen_v2 import OpenApiGenAiCodegenV2
 from docker.java_spring_boot_generator import JavaSpringBootDockerfileGenerator
 from docker_registry.ecr_registry import EcrRegistry
 from infra.cloudformation_infra_generator import CloudFormationInfraGenerator
@@ -45,7 +46,7 @@ def process_service_creation(payload):
     elif "openapi-gen" in service_info:
         codegen = OpenApiGenAiCodegen()
     elif "openapi-gen-v2" in service_info:
-        copegen = Open
+        codegen = OpenApiGenAiCodegenV2()
     else:
         raise ValueError(f"Unsupported model type.")
 
