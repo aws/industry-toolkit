@@ -39,7 +39,10 @@ class OpenApiGenAiCodegenV2(Codegen):
         # Create gradle file
         prompt = """
         Create a gradle file for a java 8 spring boot project. Also include DynamoDB lib from the AWS SDK v2. It should
-        use SpringBoot 2.17.13 and spring dependency management 1.1.3. It should be compatible with Java 1.8.
+        use SpringBoot 2.17.13 and spring dependency management 1.1.3. It should be compatible with Java 1.8. Also needs
+        org.springdoc:springdoc-openapi-ui 1.6.15, com.google.code.findbugs:jsr305:3.0.2, com.fasterxml.jackson.dataformat:jackson-dataformat-yaml,
+        com.fasterxml.jackson.datatype:jackson-datatype-jsr310, org.openapitools:jackson-databind-nullable:0.2.6,
+        com.fasterxml.jackson.core:jackson-databind.
         """
         self.generate_source_file(prompt, f"{app_dir}/build.gradle",)
 
@@ -69,7 +72,7 @@ class OpenApiGenAiCodegenV2(Codegen):
 
         prompt = f"""
         You are a Java developer. Implement the following Java interface using DynamoDB as a backend.
-        The implementation should use DynamoDBMapper for all CRUD operations. The implementation will be in Java 1.8.
+        The implementation should use v2 of the aws sdk. The implementation will be in Java 1.8.
         {interface_content}
         """
 
