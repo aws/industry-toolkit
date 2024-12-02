@@ -13,6 +13,7 @@ class OpenApiGenAiCodegenV2(Codegen):
         app_dir = f"/tmp/{project_id}/app"
         infra_dir = f"/tmp/{project_id}/infra"
         os.makedirs(app_dir, exist_ok=True)
+        os.makedirs(infra_dir, exist_ok=True)
 
         prompt = service_info["openapi-gen-v2"]["prompt"]
 
@@ -41,7 +42,6 @@ class OpenApiGenAiCodegenV2(Codegen):
         self.generate_source_file(self, f"{app_dir}/build.gradle", prompt)
 
         # Create infra.yaml
-        os.makedirs(infra_dir, exist_ok=True)
         prompt = """
         Create a CloudFormation script in yaml. It will create a Fargate task that runs a Java Spring Boot service. It will
         create a DynamoDB table and pass in the name of the table to the Fargate task as an environment variable. It will
@@ -141,6 +141,7 @@ class OpenApiGenAiCodegenV2(Codegen):
         else:
             generated_content = ""
 
+        print(file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as file:
             file.write(generated_content)
