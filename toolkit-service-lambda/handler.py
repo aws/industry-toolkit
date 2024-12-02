@@ -141,3 +141,40 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"message": "An error occurred while processing the service creation."}),
         }
+
+def main():
+    """Main function for local testing."""
+    event = {
+        "service": {
+            "name": "MyService",
+            "type": "spring",
+            "description": "A sample service",
+            "openapi-gen-v2": {
+                "prompt": "Create an API for a shopping cart.",
+                "config": {
+                    "basePackage": "com.example",
+                    "modelPackage": "com.example.model",
+                    "apiPackage": "com.example.api",
+                    "invokerPackage": "com.example.invoker",
+                    "groupId": "com.example",
+                    "artifactId": "shopping-cart-service"
+                }
+            }
+        },
+        "scm": {
+            "github": {
+                "repo": "https://github.com/example/shopping-cart-service",
+                "token": "my-github-token"
+            }
+        },
+        "iac": {
+            "cloudformation": {}
+        }
+    }
+
+    result = process_service_creation(event)
+    print("Result:", json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()

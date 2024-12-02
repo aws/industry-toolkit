@@ -1,20 +1,17 @@
 import boto3
 import os
-import argparse
 import json
 import subprocess
 
 from codegen.codegen import Codegen
 
 
-class OpenApiGenAiCodegen(Codegen):
+class OpenApiGenAiCodegenV2(Codegen):
     def generate_project(self, project_id: str, service_info: str):
-        service_type = service_info["openapi-gen-v2"]["type"]
-
         config = service_info["openapi-gen-v2"].get("config", {})
 
-        app_dir = f"./app/{project_id}/app"
-        infra_dir = f"./app/{project_id}/infra"
+        app_dir = f"./tmp/{project_id}/app"
+        infra_dir = f"./tmp/{project_id}/infra"
         os.makedirs(app_dir, exist_ok=True)
 
         prompt = service_info["openapi-gen-v2"]["prompt"]
@@ -25,7 +22,7 @@ class OpenApiGenAiCodegen(Codegen):
             "/opt/openapi-generator-cli.jar",
             "generate",
             "-i", "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/customer/models/customer.openapi.yaml",
-            "-g", service_type,
+            "-g", "spring",
             "-o", app_dir,
             "--additional-properties", ",".join(f"{k}={v}" for k, v in config.items())
         ]
@@ -157,26 +154,3 @@ class OpenApiGenAiCodegen(Codegen):
         with open(file_path, "w") as file:
             file.write(generated_content)
 
-
-    # def main():
-    #     service_info = {
-    #         "openapi-gen-v2": {
-    #             "type": "spring",
-    #             "prompt": "Create me a shopping cart service with OpenAPI that has operations to create, read, update, and delete carts, and to add and remove CartItems to a cart. Model objects should end in Request or Response.",
-    #             "config": {
-    #                 "basePackage": "com.amazonaws.example",
-    #                 "modelPackage": "com.amazonaws.example.model",
-    #                 "apiPackage": "com.amazonaws.example.api",
-    #                 "invokerPackage": "com.amazonaws.example.configuration",
-    #                 "groupId": "com.amazonaws.example",
-    #                 "artifactId": "reiv-demo"
-    #             }
-    #         }
-    #     }
-    #
-    #     generate_project("my-proj", service_info)
-    #     # implement_interface("CustomersApi.java", "")
-    #
-    #
-    # if __name__ == "__main__":
-    #     main()
