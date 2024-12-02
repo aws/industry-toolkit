@@ -46,9 +46,9 @@ class OpenApiGenAiCodegenV2(Codegen):
         create a DynamoDB table and pass in the name of the table to the Fargate task as an environment variable. It will
         take parameters for the VPC ID, subnets, and the ECR image tag of the image to run.
         """
-        self.generate_source_file(self, f"{infra_dir}/infra.yaml", prompt)
+        self.generate_source_file(f"{infra_dir}/infra.yaml", prompt)
 
-        self.implement_interface(self, f"{app_dir}/src/main/java/com/amazonaws/example/api/CustomersApi.java")
+        self.implement_interface(f"{app_dir}/src/main/java/com/amazonaws/example/api/CustomersApi.java")
 
         print(f"Project generated successfully at {app_dir}")
 
