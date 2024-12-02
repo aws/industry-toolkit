@@ -4,178 +4,179 @@ import argparse
 import json
 import subprocess
 
-
-def generate_project(project_id: str, service_info: str):
-    service_type = service_info["openapi-gen-v2"]["type"]
-
-    config = service_info["openapi-gen-v2"].get("config", {})
-
-    app_dir = f"./app/{project_id}/app"
-    infra_dir = f"./app/{project_id}/infra"
-    os.makedirs(app_dir, exist_ok=True)
-
-    prompt = service_info["openapi-gen-v2"]["prompt"]
-
-    command = [
-        "java",
-        "-jar",
-        "/opt/openapi-generator-cli.jar",
-        "generate",
-        "-i", "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/customer/models/customer.openapi.yaml",
-        "-g", service_type,
-        "-o", app_dir,
-        "--additional-properties", ",".join(f"{k}={v}" for k, v in config.items())
-    ]
-
-    try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
-        print(f"Project generated successfully at {app_dir}")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to generate project: {e}")
-        raise RuntimeError(f"Error running OpenAPI Generator: {e.stderr}")
-
-    # Create gradle file
-    prompt = """
-    Create a gradle file for a java 8 spring boot project. Also include DynamoDB lib from the AWS SDK v2. 
-    """
-    generate_source_file(f"{app_dir}/build.gradle", prompt)
-
-    # Create infra.yaml
-    prompt = """
-    Create a CloudFormation script in yaml. It will create a Fargate task that runs a Java Spring Boot service. It will
-    create a DynamoDB table and pass in the name of the table to the Fargate task as an environment variable. It will
-    take parameters for the VPC ID, subnets, and the ECR image tag of the image to run.
-    """
-    generate_source_file(f"{infra_dir}/infra.yaml", prompt)
-
-    implement_interface(f"{app_dir}/src/main/java/com/amazonaws/example/api/CustomersApi.java")
+from codegen.codegen import Codegen
 
 
-def implement_interface(interface_path: str):
-    interface_name = os.path.basename(interface_path).replace(".java", "")
-    directory = os.path.dirname(interface_path)
-    implementation_name = f"{interface_name}Impl.java"
-    implementation_path = os.path.join(directory, implementation_name)
+class OpenApiGenAiCodegen(Codegen):
+    def generate_project(self, project_id: str, service_info: str):
+        service_type = service_info["openapi-gen-v2"]["type"]
 
-    # Read the interface content
-    with open(interface_path, "r") as interface_file:
-        interface_content = interface_file.read()
+        config = service_info["openapi-gen-v2"].get("config", {})
 
-    bedrock = boto3.client('bedrock-runtime')
+        app_dir = f"./app/{project_id}/app"
+        infra_dir = f"./app/{project_id}/infra"
+        os.makedirs(app_dir, exist_ok=True)
 
-    prompt = f"""
-    You are a Java developer. Implement the following Java interface using DynamoDB as a backend.
-    The implementation should use DynamoDBMapper for all CRUD operations. The implementation will be in Java 1.8.
-    {interface_content}
-    """
+        prompt = service_info["openapi-gen-v2"]["prompt"]
 
-    formatted_prompt = f'Human: {prompt}\n\nAssistant:'
+        command = [
+            "java",
+            "-jar",
+            "/opt/openapi-generator-cli.jar",
+            "generate",
+            "-i", "https://raw.githubusercontent.com/aws-samples/industry-reference-models/refs/heads/main/domains/retail/models/customer/models/customer.openapi.yaml",
+            "-g", service_type,
+            "-o", app_dir,
+            "--additional-properties", ",".join(f"{k}={v}" for k, v in config.items())
+        ]
 
-    messages = [
-        {"role": "system", "content": "You are an expert code generator."},
-        {"role": "user", "content": prompt}
-    ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True)
+            print(f"Project generated successfully at {app_dir}")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to generate project: {e}")
+            raise RuntimeError(f"Error running OpenAPI Generator: {e.stderr}")
 
-    body = json.dumps({
-        "messages": messages,
-        "max_tokens_to_sample": 1024,
-        "temperature": 0.7,
-        "top_p": 0.9
-    })
+        # Create gradle file
+        prompt = """
+        Create a gradle file for a java 8 spring boot project. Also include DynamoDB lib from the AWS SDK v2. 
+        """
+        self.generate_source_file(self, f"{app_dir}/build.gradle", prompt)
 
-    response = bedrock.invoke_model(
-        modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
-        contentType='application/json',
-        accept='application/json',
-        body=json.dumps({
-            "messages": [
-                {"role": "user", "content": formatted_prompt}
-            ],
-            "max_tokens": 10000,
-            "anthropic_version": "bedrock-2023-05-31"
+        # Create infra.yaml
+        prompt = """
+        Create a CloudFormation script in yaml. It will create a Fargate task that runs a Java Spring Boot service. It will
+        create a DynamoDB table and pass in the name of the table to the Fargate task as an environment variable. It will
+        take parameters for the VPC ID, subnets, and the ECR image tag of the image to run.
+        """
+        self.generate_source_file(self, f"{infra_dir}/infra.yaml", prompt)
+
+        self.implement_interface(self, f"{app_dir}/src/main/java/com/amazonaws/example/api/CustomersApi.java")
+
+    def implement_interface(self, interface_path: str):
+        interface_name = os.path.basename(interface_path).replace(".java", "")
+        directory = os.path.dirname(interface_path)
+        implementation_name = f"{interface_name}Impl.java"
+        implementation_path = os.path.join(directory, implementation_name)
+
+        # Read the interface content
+        with open(interface_path, "r") as interface_file:
+            interface_content = interface_file.read()
+
+        bedrock = boto3.client('bedrock-runtime')
+
+        prompt = f"""
+        You are a Java developer. Implement the following Java interface using DynamoDB as a backend.
+        The implementation should use DynamoDBMapper for all CRUD operations. The implementation will be in Java 1.8.
+        {interface_content}
+        """
+
+        formatted_prompt = f'Human: {prompt}\n\nAssistant:'
+
+        messages = [
+            {"role": "system", "content": "You are an expert code generator."},
+            {"role": "user", "content": prompt}
+        ]
+
+        body = json.dumps({
+            "messages": messages,
+            "max_tokens_to_sample": 1024,
+            "temperature": 0.7,
+            "top_p": 0.9
         })
-    )
 
-    model_response = json.loads(response["body"].read())
-    response_text = model_response["content"][0]["text"]
+        response = bedrock.invoke_model(
+            modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+            contentType='application/json',
+            accept='application/json',
+            body=json.dumps({
+                "messages": [
+                    {"role": "user", "content": formatted_prompt}
+                ],
+                "max_tokens": 10000,
+                "anthropic_version": "bedrock-2023-05-31"
+            })
+        )
 
-    split_text = response_text.split("```", 1)
-    if len(split_text) > 1:
-        implementation_code = split_text[1].split("```", 1)[0].strip()
-    else:
-        implementation_code = split_text.strip()
+        model_response = json.loads(response["body"].read())
+        response_text = model_response["content"][0]["text"]
 
-    # Write the generated implementation to the file
-    with open(implementation_path, "w") as impl_file:
-        impl_file.write(implementation_code)
+        split_text = response_text.split("```", 1)
+        if len(split_text) > 1:
+            implementation_code = split_text[1].split("```", 1)[0].strip()
+        else:
+            implementation_code = split_text.strip()
 
-    print(f"Implementation written to {implementation_path}")
+        # Write the generated implementation to the file
+        with open(implementation_path, "w") as impl_file:
+            impl_file.write(implementation_code)
 
+        print(f"Implementation written to {implementation_path}")
 
-def generate_source_file(prompt: str, file_path: str, model_id: str = "anthropic.claude-3-5"):
-    bedrock = boto3.client('bedrock-runtime')
+    def generate_source_file(self, prompt: str, file_path: str, model_id: str = "anthropic.claude-3-5"):
+        bedrock = boto3.client('bedrock-runtime')
 
-    messages = [
-        {"role": "system", "content": "You are an expert code generator."},
-        {"role": "user", "content": prompt}
-    ]
+        messages = [
+            {"role": "system", "content": "You are an expert code generator."},
+            {"role": "user", "content": prompt}
+        ]
 
-    formatted_prompt = f'Human: {prompt}\n\nAssistant:'
+        formatted_prompt = f'Human: {prompt}\n\nAssistant:'
 
-    body = json.dumps({
-        "messages": messages,
-        "max_tokens_to_sample": 1024,
-        "temperature": 0.7,
-        "top_p": 0.9
-    })
-
-    response = bedrock.invoke_model(
-        modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
-        contentType='application/json',
-        accept='application/json',
-        body=json.dumps({
-            "messages": [
-                {"role": "user", "content": formatted_prompt}
-            ],
-            "max_tokens": 10000,
-            "anthropic_version": "bedrock-2023-05-31"
+        body = json.dumps({
+            "messages": messages,
+            "max_tokens_to_sample": 1024,
+            "temperature": 0.7,
+            "top_p": 0.9
         })
-    )
 
-    model_response = json.loads(response["body"].read())
-    response_text = model_response["content"][0]["text"]
+        response = bedrock.invoke_model(
+            modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+            contentType='application/json',
+            accept='application/json',
+            body=json.dumps({
+                "messages": [
+                    {"role": "user", "content": formatted_prompt}
+                ],
+                "max_tokens": 10000,
+                "anthropic_version": "bedrock-2023-05-31"
+            })
+        )
 
-    split_text = response_text.split('```', 1)
+        model_response = json.loads(response["body"].read())
+        response_text = model_response["content"][0]["text"]
 
-    if len(split_text) > 1:
-        generated_content = split_text[1].split('```', 1)[0].strip()
-    else:
-        generated_content = ""
+        split_text = response_text.split('```', 1)
 
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, "w") as file:
-        file.write(generated_content)
+        if len(split_text) > 1:
+            generated_content = split_text[1].split('```', 1)[0].strip()
+        else:
+            generated_content = ""
 
-
-def main():
-    service_info = {
-        "openapi-gen-v2": {
-            "type": "spring",
-            "prompt": "Create me a shopping cart service with OpenAPI that has operations to create, read, update, and delete carts, and to add and remove CartItems to a cart. Model objects should end in Request or Response.",
-            "config": {
-                "basePackage": "com.amazonaws.example",
-                "modelPackage": "com.amazonaws.example.model",
-                "apiPackage": "com.amazonaws.example.api",
-                "invokerPackage": "com.amazonaws.example.configuration",
-                "groupId": "com.amazonaws.example",
-                "artifactId": "reiv-demo"
-            }
-        }
-    }
-
-    generate_project("my-proj", service_info)
-    # implement_interface("CustomersApi.java", "")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w") as file:
+            file.write(generated_content)
 
 
-if __name__ == "__main__":
-    main()
+    # def main():
+    #     service_info = {
+    #         "openapi-gen-v2": {
+    #             "type": "spring",
+    #             "prompt": "Create me a shopping cart service with OpenAPI that has operations to create, read, update, and delete carts, and to add and remove CartItems to a cart. Model objects should end in Request or Response.",
+    #             "config": {
+    #                 "basePackage": "com.amazonaws.example",
+    #                 "modelPackage": "com.amazonaws.example.model",
+    #                 "apiPackage": "com.amazonaws.example.api",
+    #                 "invokerPackage": "com.amazonaws.example.configuration",
+    #                 "groupId": "com.amazonaws.example",
+    #                 "artifactId": "reiv-demo"
+    #             }
+    #         }
+    #     }
+    #
+    #     generate_project("my-proj", service_info)
+    #     # implement_interface("CustomersApi.java", "")
+    #
+    #
+    # if __name__ == "__main__":
+    #     main()

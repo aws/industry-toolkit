@@ -44,6 +44,8 @@ def process_service_creation(payload):
         codegen = OpenApiCodegen()
     elif "openapi-gen" in service_info:
         codegen = OpenApiGenAiCodegen()
+    elif "openapi-gen-v2" in service_info:
+        copegen = Open
     else:
         raise ValueError(f"Unsupported model type.")
 
