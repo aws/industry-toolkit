@@ -181,7 +181,7 @@ class IndustryToolkitStack(Stack):
             "arn:aws:ecr:us-west-2:211125507740:repository/industry-toolkit/service-lambda-handler"
         )
 
-        image_digest = "sha256:5886d066c95a0c96932fa242ab7c03e9a43ef71a4df84c99e51b8a71af47eb49"
+        image_digest = "sha256:2f08d7cbe1eee7e768b8b95336b8a0ce65a05f05e49c13b2320d8566e4303a25"
 
         bootstrapper_lambda_function = lambda_.Function(
             self,

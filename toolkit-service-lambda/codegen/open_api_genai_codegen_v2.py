@@ -146,7 +146,7 @@ class OpenApiGenAiCodegenV2(Codegen):
         with open(file_path, "w") as file:
             file.write(implementation_code)
 
-    def extract_code_block(response_text):
+    def extract_code_block(self, response_text):
         split_text = re.split(r"```[a-zA-Z]*\n", response_text, maxsplit=1)
         if len(split_text) > 1:
             return split_text[1].split("```", 1)[0].strip()
