@@ -79,13 +79,6 @@ class OpenApiGenAiCodegenV2(Codegen):
             {"role": "user", "content": prompt}
         ]
 
-        body = json.dumps({
-            "messages": messages,
-            "max_tokens_to_sample": 1024,
-            "temperature": 0.7,
-            "top_p": 0.9
-        })
-
         response = bedrock.invoke_model(
             modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
             contentType='application/json',
@@ -102,19 +95,14 @@ class OpenApiGenAiCodegenV2(Codegen):
         model_response = json.loads(response["body"].read())
         response_text = model_response["content"][0]["text"]
 
-        split_text = response_text.split("```", 1)
-        if len(split_text) > 1:
-            implementation_code = split_text[1].split("```", 1)[0].strip()
-        else:
-            implementation_code = split_text.strip()
+        implementation_code = self.extract_code_block(response_text)
 
-        # Write the generated implementation to the file
         with open(implementation_path, "w") as impl_file:
             impl_file.write(implementation_code)
 
         print(f"Implementation written to {implementation_path}")
 
-    def generate_source_file(self, prompt: str, file_path: str, model_id: str = "anthropic.claude-3-5"):
+    def generate_source_file(self, prompt: str, file_path: str):
         bedrock = boto3.client('bedrock-runtime')
 
         formatted_prompt = f'Human: {prompt}\n\nAssistant:'
@@ -136,12 +124,6 @@ class OpenApiGenAiCodegenV2(Codegen):
         response_text = model_response["content"][0]["text"]
 
         implementation_code = self.extract_code_block(response_text)
-        # if len(split_text) > 1:
-        #     generated_content = split_text[1].split('```', 1)[0].strip()
-        # else:
-        #     generated_content = ""
-
-        print(file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as file:
             file.write(implementation_code)
