@@ -39,7 +39,7 @@ class OpenApiGenAiCodegenV2(Codegen):
         # Create gradle file
         prompt = """
         Create a gradle file for a java 8 spring boot project. Also include DynamoDB lib from the AWS SDK v2. It should
-        use SpringBoot 3.1.6 and spring dependency management 1.1.3. It should be compatible with Java 1.8.
+        use SpringBoot 2.17.13 and spring dependency management 1.1.3. It should be compatible with Java 1.8.
         """
         self.generate_source_file(prompt, f"{app_dir}/build.gradle",)
 
