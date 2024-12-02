@@ -2,6 +2,7 @@ import boto3
 import os
 import json
 import subprocess
+import re
 
 from codegen.codegen import Codegen
 
@@ -134,15 +135,19 @@ class OpenApiGenAiCodegenV2(Codegen):
         model_response = json.loads(response["body"].read())
         response_text = model_response["content"][0]["text"]
 
-        split_text = response_text.split('```', 1)
-
-        if len(split_text) > 1:
-            generated_content = split_text[1].split('```', 1)[0].strip()
-        else:
-            generated_content = ""
+        implementation_code = self.extract_code_block(response_text)
+        # if len(split_text) > 1:
+        #     generated_content = split_text[1].split('```', 1)[0].strip()
+        # else:
+        #     generated_content = ""
 
         print(file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as file:
-            file.write(generated_content)
+            file.write(implementation_code)
 
+    def extract_code_block(response_text):
+        split_text = re.split(r"```[a-zA-Z]*\n", response_text, maxsplit=1)
+        if len(split_text) > 1:
+            return split_text[1].split("```", 1)[0].strip()
+        return response_text.strip()
