@@ -39,7 +39,7 @@ class OpenApiGenAiCodegenV2(Codegen):
         prompt = """
         Create a gradle file for a java 8 spring boot project. Also include DynamoDB lib from the AWS SDK v2. 
         """
-        self.generate_source_file(self, f"{app_dir}/build.gradle", prompt)
+        self.generate_source_file(prompt, f"{app_dir}/build.gradle",)
 
         # Create infra.yaml
         prompt = """
