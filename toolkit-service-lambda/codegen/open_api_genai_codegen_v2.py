@@ -10,8 +10,8 @@ class OpenApiGenAiCodegenV2(Codegen):
     def generate_project(self, project_id: str, service_info: str):
         config = service_info["openapi-gen-v2"].get("config", {})
 
-        app_dir = f"./tmp/{project_id}/app"
-        infra_dir = f"./tmp/{project_id}/infra"
+        app_dir = f"/tmp/{project_id}/app"
+        infra_dir = f"/tmp/{project_id}/infra"
         os.makedirs(app_dir, exist_ok=True)
 
         prompt = service_info["openapi-gen-v2"]["prompt"]
